@@ -1,0 +1,19 @@
+language: python
+python:
+    - 3.4
+    - pypy3
+
+install:
+    - python setup.py install
+    - pip install coverage coveralls
+
+script:
+    - coverage run --source=pycwl ./test/test.py
+#    - coverage report --show-missing
+
+after_success:
+    - coveralls
+
+matrix:
+  allow_failures:
+    - python: pypy3
