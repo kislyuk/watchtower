@@ -12,7 +12,14 @@ Synopsis
 --------
 ::
 
-    TODO
+    import logging, pycwl
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    logger.addHandler(pycwl.CloudWatchLogHandler())
+    logger.info("Hi")
+
+    logger.addHandler(CloudWatchLogHandler(queue=True))
+    logger.info("This message will be aggregated into a queue and submitted in a batch")
 
 Authors
 -------
