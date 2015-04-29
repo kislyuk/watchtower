@@ -51,7 +51,7 @@ Example: Flask logging with PyCWL
     if __name__ == '__main__':
         app.run()
 
-(See also `http://flask.pocoo.org/docs/0.10/errorhandling/ <http://flask.pocoo.org/docs/0.10/errorhandling/>`_.)
+(See also `http://flask.pocoo.org/docs/errorhandling/ <http://flask.pocoo.org/docs/errorhandling/>`_.)
 
 Examples: Querying CloudWatch logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
