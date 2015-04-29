@@ -7,10 +7,10 @@ CloudWatch Logs is a log management service built into AWS. It is conceptually s
 Loggly, but is more lightweight, cheaper, and tightly integrated with the rest of AWS.
 
 PyCWL, in turn, is a lightweight adapter between the `Python logging system
-<https://docs.python.org/library/logging.html>`_ and the `boto3 AWS SDK <https://github.com/boto/boto3>`_. It lets you
-plug your application logging directly into CloudWatch without the need to install a system-wide log collector. It
-aggregates logs into batches to avoid sending an API request per each log message, while guaranteeing a delivery
-deadline (60 seconds by default).
+<https://docs.python.org/library/logging.html>`_ and CloudWatch Logs. It uses the `boto3 AWS SDK
+<https://github.com/boto/boto3>`_, and lets you plug your application logging directly into CloudWatch without the need
+to install a system-wide log collector. It aggregates logs into batches to avoid sending an API request per each log
+message, while guaranteeing a delivery deadline (60 seconds by default).
 
 Installation
 ~~~~~~~~~~~~
