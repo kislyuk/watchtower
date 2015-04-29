@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: utf-8
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os, sys, unittest, collections, copy, re
+
+print(sys.version)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pycwl import *
@@ -15,10 +17,23 @@ class TestPyCWL(unittest.TestCase):
     def test_basic_pycwl_statements(self):
         h = CloudWatchLogHandler()
 
-        logger = logging.getLogger(__name__)
-        #logger.addHandler(CloudWatchLogHandler(threading=True))
-        logger.addHandler(CloudWatchLogHandler())
-        logger.error("test")
+        loggers = []
+        for i in range(2):
+            logger = logging.getLogger("logger{}".format(i))
+            logger.addHandler(CloudWatchLogHandler())
+            #logger.addHandler(CloudWatchLogHandler(use_queues=False))
+            loggers.append(logger)
+        for i in range(9000):
+            for logger in loggers:
+                logger.error("test")
+        import time
+        time.sleep(1)
+        for i in range(9000):
+            for logger in loggers:
+                logger.error("test")
+        for i in range(9000):
+            for logger in loggers:
+                logger.error("test")
 
 if __name__ == "__main__":
     unittest.main()
