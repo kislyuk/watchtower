@@ -6,7 +6,7 @@ PyCWL is a log handler for `Amazon Web Services CloudWatch Logs
 CloudWatch Logs is a log management service built into AWS. It is conceptually similar to services like Splunk and
 Loggly, but is more lightweight, cheaper, and tightly integrated with the rest of AWS.
 
-PyCWL, in turn, is a lightweight binding between the `Python logging system
+PyCWL, in turn, is a lightweight adapter between the `Python logging system
 <https://docs.python.org/library/logging.html>`_ and the `boto3 AWS SDK <https://github.com/boto/boto3>`_. It lets you
 plug your application logging directly into CloudWatch without the need to install a system-wide log collector. It
 aggregates logs into batches to avoid sending an API request per each log message, while guaranteeing a delivery
@@ -59,6 +59,7 @@ This section is not specific to PyCWL. It demonstrates the use of `awscli <https
 `jq <http://stedolan.github.io/jq/>`_ to read and search CloudWatch logs on the command line.
 
 For the Flask example above, you can retrieve your application logs with the following two commands::
+
     aws logs get-log-events --log-group-name pycwl --log-stream-name loggable | jq '.events[].message'
     aws logs get-log-events --log-group-name pycwl --log-stream-name werkzeug | jq '.events[].message'
 
