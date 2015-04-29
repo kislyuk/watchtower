@@ -20,7 +20,7 @@ Installation
 
 Synopsis
 --------
-Install `awscli <https://pypi.python.org/pypi/awscli>`_ and run `aws configure`, then::
+Install `awscli <https://pypi.python.org/pypi/awscli>`_ and run ``aws configure``, then::
 
     import logging, pycwl
     logging.basicConfig(level=logging.DEBUG)
