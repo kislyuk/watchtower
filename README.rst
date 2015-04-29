@@ -63,6 +63,13 @@ For the Flask example above, you can retrieve your application logs with the fol
     aws logs get-log-events --log-group-name pycwl --log-stream-name loggable | jq '.events[].message'
     aws logs get-log-events --log-group-name pycwl --log-stream-name werkzeug | jq '.events[].message'
 
+CloudWatch Logs supports alerting and dashboards based on `metric filters
+<http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/FilterAndPatternSyntax.html>`_, which are pattern
+rules that extract information from your logs and feed it to alarms and dashboard graphs. The following example shows
+setting up a metric filter on a PyCWL log stream, a dashboard to visualize it, and an alarm that sends an email::
+
+    TODO
+
 Authors
 -------
 * Andrey Kislyuk
