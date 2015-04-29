@@ -33,7 +33,8 @@ class CloudWatchLogHandler(handler_base_class):
     :param log_group: Name of the CloudWatch log group to write logs to.
     :type log_group: String
     :param use_queues:
-        If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue handler process will be spawned.
+        If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue
+        handler thread will be spawned.
     :type queue: Boolean
     :param send_interval:
         Maximum time (in seconds, or a timedelta) to hold messages in queue before sending a batch.

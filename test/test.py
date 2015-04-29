@@ -23,15 +23,15 @@ class TestPyCWL(unittest.TestCase):
             logger.addHandler(h)
             #logger.addHandler(CloudWatchLogHandler(use_queues=False))
             loggers.append(logger)
-        for i in range(10):
+        for i in range(10001):
             for logger in loggers:
                 logger.error("test")
         import time
         time.sleep(1)
-        for i in range(10):
+        for i in range(9000):
             for logger in loggers:
                 logger.error("test")
-        for i in range(10):
+        for i in range(1001):
             for logger in loggers:
                 logger.error("test")
 
