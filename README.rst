@@ -20,13 +20,21 @@ Installation
 
 Synopsis
 --------
-::
+Install `awscli <https://pypi.python.org/pypi/awscli>`_ and run `aws configure`, then::
 
     import logging, pycwl
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
     logger.addHandler(pycwl.CloudWatchLogHandler())
     logger.info("Hi")
+
+After running the example, you can see the log output in your `AWS console
+<https://console.aws.amazon.com/cloudwatch/home>`_.
+
+Example: Flask logging with PyCWL
+---------------------------------
+::
+    TODO
 
 Reading and searching logs on the command line
 ----------------------------------------------
