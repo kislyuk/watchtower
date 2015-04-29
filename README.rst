@@ -15,6 +15,7 @@ deadline (60 seconds by default).
 Installation
 ~~~~~~~~~~~~
 ::
+
     pip install pycwl
 
 Synopsis
@@ -34,6 +35,7 @@ After running the example, you can see the log output in your `AWS console
 Example: Flask logging with PyCWL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
+
     import pycwl, flask, logging
 
     logging.basicConfig(level=logging.INFO)
