@@ -1,10 +1,10 @@
 PyCWL: Python CloudWatch Logging
 ================================
-PyCWL is a log handler for Amazon Web Services CloudWatch Logs.
+PyCWL is a log handler for `Amazon Web Services CloudWatch Logs
+<https://aws.amazon.com/blogs/aws/cloudwatch-log-service/>`_.
 
-`CloudWatch Logs <https://aws.amazon.com/blogs/aws/cloudwatch-log-service/>`_ is a log management service built into
-AWS. It is conceptually similar to services like Splunk and Loggly, but is more lightweight, cheaper, and tightly
-integrated with the rest of AWS.
+CloudWatch Logs is a log management service built into AWS. It is conceptually similar to services like Splunk and
+Loggly, but is more lightweight, cheaper, and tightly integrated with the rest of AWS.
 
 PyCWL, in turn, is a lightweight binding between the `Python logging system
 <https://docs.python.org/library/logging.html>`_ and the `boto3 AWS SDK <https://github.com/boto/boto3>`_. It lets you
