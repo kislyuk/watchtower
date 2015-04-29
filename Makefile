@@ -13,7 +13,7 @@ test3: env
 	python3 ./test/test.py -v
 
 release: docs
-	python setup.py sdist upload -s -i D2069255
+	python setup.py sdist bdist_wheel upload -s -i D2069255
 
 init_docs:
 	cd docs; sphinx-quickstart
