@@ -86,11 +86,11 @@ Licensed under the terms of the `Apache License, Version 2.0 <http://www.apache.
         :target: https://travis-ci.org/kislyuk/pycwl
 .. image:: https://coveralls.io/repos/kislyuk/pycwl/badge.svg?branch=master
         :target: https://coveralls.io/r/kislyuk/pycwl?branch=master
-.. image:: https://pypip.in/version/pycwl/badge.svg
+.. image:: https://img.shields.io/pypi/v/pycwl.svg
         :target: https://pypi.python.org/pypi/pycwl
-.. image:: https://pypip.in/download/pycwl/badge.svg
+.. image:: https://img.shields.io/pypi/dm/pycwl.svg
         :target: https://pypi.python.org/pypi/pycwl
-.. image:: https://pypip.in/py_versions/pycwl/badge.svg
+.. image:: https://img.shields.io/pypi/l/pycwl.svg
         :target: https://pypi.python.org/pypi/pycwl
 .. image:: https://readthedocs.org/projects/pycwl/badge/?version=latest
         :target: https://pycwl.readthedocs.org/
