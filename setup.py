@@ -7,7 +7,7 @@ install_requires = [line.rstrip() for line in open(os.path.join(os.path.dirname(
 
 setup(
     name='pycwl',
-    version='0.0.1',
+    version='0.1.0',
     url='https://github.com/kislyuk/pycwl',
     license='Apache Software License',
     author='Andrey Kislyuk',
