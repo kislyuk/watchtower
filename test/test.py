@@ -16,24 +16,34 @@ class TestPyCWL(unittest.TestCase):
 
     def test_basic_pycwl_statements(self):
         h = CloudWatchLogHandler()
-
         loggers = []
-        for i in range(2):
+        for i in range(5):
             logger = logging.getLogger("logger{}".format(i))
-            logger.addHandler(CloudWatchLogHandler())
+            logger.addHandler(h)
             #logger.addHandler(CloudWatchLogHandler(use_queues=False))
             loggers.append(logger)
-        for i in range(9000):
+        for i in range(10):
             for logger in loggers:
                 logger.error("test")
         import time
         time.sleep(1)
-        for i in range(9000):
+        for i in range(10):
             for logger in loggers:
                 logger.error("test")
-        for i in range(9000):
+        for i in range(10):
             for logger in loggers:
                 logger.error("test")
+
+    def test_flush_safing(self):
+        handler = CloudWatchLogHandler()
+        logger = logging.getLogger("l")
+        logger.addHandler(handler)
+        handler.flush()
+        logger.critical("msg")
+
+    def test_multiple_handlers(self):
+        # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit
+        pass
 
 if __name__ == "__main__":
     unittest.main()

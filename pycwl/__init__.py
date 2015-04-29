@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import os, sys, json, logging, time, threading
+import os, sys, json, logging, time, threading, warnings
 
 try:
     from Queue import Queue
@@ -13,12 +13,15 @@ from botocore.exceptions import ClientError
 handler_base_class = logging.Handler
 
 def _idempotent_create(_callable, *args, **kwargs):
-    print("CREATE", _callable, args, kwargs)
+    #print("CREATE", _callable, args, kwargs)
     try:
         _callable(*args, **kwargs)
     except ClientError as e:
         if e.response.get("Error", {}).get("Code") != "ResourceAlreadyExistsException":
             raise
+
+class PyCWLWarning(UserWarning):
+    pass
 
 class CloudWatchLogHandler(handler_base_class):
     """
@@ -55,10 +58,14 @@ class CloudWatchLogHandler(handler_base_class):
         self.max_batch_count = max_batch_count
         self.cwl_client = boto3.client("logs")
         self.queues, self.sequence_tokens = {}, {}
+        self.threads = []
+        self.shutting_down = False
         _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
 
     def _submit_batch(self, batch, stream_name):
-        print("Sending batch", len(batch), stream_name)
+        if len(batch) < 1:
+            return
+        #print("Sending batch", len(batch), stream_name)
         kwargs = dict(logGroupName=self.log_group, logStreamName=stream_name,
                       logEvents=batch)
         if self.sequence_tokens[stream_name] is not None:
@@ -79,12 +86,9 @@ class CloudWatchLogHandler(handler_base_class):
             raise Exception("Failed to deliver logs: {}".format(response))
 
         self.sequence_tokens[stream_name] = response["nextSequenceToken"]
-        print("Done sending batch", len(batch), stream_name)
+        #print("Done sending batch", len(batch), stream_name)
 
     def emit(self, message):
-        #print("Will emit", message)
-        #print(message.__dict__)
-
         stream_name = message.name
         if stream_name not in self.sequence_tokens:
             _idempotent_create(self.cwl_client.create_log_stream,
@@ -98,11 +102,13 @@ class CloudWatchLogHandler(handler_base_class):
                 thread = threading.Thread(target=self.batch_sender,
                                           args=(self.queues[stream_name], stream_name, self.send_interval,
                                                 self.max_batch_size, self.max_batch_count))
-
-                #parent_thread=threading.current_thread))
+                self.threads.append(thread)
                 thread.daemon = True
                 thread.start()
-            self.queues[stream_name].put(msg)
+            if self.shutting_down:
+                warnings.warn("Received message after logging system shutdown", PyCWLWarning)
+            else:
+                self.queues[stream_name].put(msg)
         else:
             self._submit_batch([msg], stream_name)
 
@@ -135,13 +141,10 @@ class CloudWatchLogHandler(handler_base_class):
                     cur_batch_msg_count += 1
                     cur_batch.append(msg)
                     queue.task_done()
-        print("Leaving loop", stream_name)
 
     def flush(self):
-        print("Flushing queues")
+        self.shutting_down = True
         for queue in self.queues.values():
-            print("q")
             queue.put(self.END)
         for queue in self.queues.values():
             queue.join()
-        print("Flushed queues")

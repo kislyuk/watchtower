@@ -1,6 +1,16 @@
-pycwl: Python CloudWatch Logging
+PyCWL: Python CloudWatch Logging
 ================================
-pycwl is a log handler for AWS CloudWatch Logs.
+PyCWL is a log handler for Amazon Web Services CloudWatch Logs.
+
+`CloudWatch Logs <https://aws.amazon.com/blogs/aws/cloudwatch-log-service/>`_ is a log management service built into
+AWS. It is conceptually similar to services like Splunk and Loggly, but is more lightweight, cheaper, and tightly
+integrated with the rest of AWS.
+
+PyCWL, in turn, is a lightweight binding between the `Python logging system
+<https://docs.python.org/library/logging.html>`_ and the `boto3 AWS SDK <https://github.com/boto/boto3>`_. It lets you
+plug your application logging directly into CloudWatch without the need to install a system-wide log collector. It
+aggregates logs into batches to avoid sending an API request per each log message, while guaranteeing a delivery
+deadline (60 seconds by default).
 
 Installation
 ------------
@@ -18,8 +28,12 @@ Synopsis
     logger.addHandler(pycwl.CloudWatchLogHandler())
     logger.info("Hi")
 
-    logger.addHandler(CloudWatchLogHandler(queue=True))
-    logger.info("This message will be aggregated into a queue and submitted in a batch")
+Reading and searching logs on the command line
+----------------------------------------------
+Install `awscli <https://pypi.python.org/pypi/awscli>`_ and `jq <http://stedolan.github.io/jq/>`_.
+::
+
+    aws logs get-log-events --log-group-name pycwl --log-stream-name LOGGER_NAME | jq '.events[].message'
 
 Authors
 -------
@@ -30,6 +44,7 @@ Links
 * `Project home page (GitHub) <https://github.com/kislyuk/pycwl>`_
 * `Documentation (Read the Docs) <https://pycwl.readthedocs.org/en/latest/>`_
 * `Package distribution (PyPI) <https://pypi.python.org/pypi/pycwl>`_
+* `Amazon CloudWatch <http://aws.amazon.com/cloudwatch/>`_
 
 Bugs
 ~~~~
