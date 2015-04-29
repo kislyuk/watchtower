@@ -9,6 +9,7 @@ print(sys.version)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from pycwl import *
+from eight import *
 
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
@@ -41,8 +42,15 @@ class TestPyCWL(unittest.TestCase):
         handler.flush()
         logger.critical("msg")
 
+    def test_json_logging(self):
+        handler = CloudWatchLogHandler()
+        logger = logging.getLogger("json")
+        logger.addHandler(handler)
+        for i in range(10):
+            logger.critical(dict(src="foo", event=str(i), stack=[1, 2, 3, i], details={}))
+
     def test_multiple_handlers(self):
-        # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit
+        # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit. This can probably be fixed with thread locals.
         pass
 
 if __name__ == "__main__":

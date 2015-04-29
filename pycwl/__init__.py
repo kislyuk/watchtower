@@ -1,11 +1,13 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import os, sys, json, logging, time, threading, warnings
+import os, sys, json, logging, time, threading, warnings, collections
 
 try:
     from Queue import Queue
 except ImportError:
     from queue import Queue
+
+from eight import *
 
 import boto3
 from botocore.exceptions import ClientError
@@ -96,6 +98,8 @@ class CloudWatchLogHandler(handler_base_class):
             self.sequence_tokens[stream_name] = None
 
         msg = dict(timestamp=int(message.created * 1000), message=message.msg)
+        if isinstance(msg["message"], collections.Mapping):
+            msg["message"] = json.dumps(msg["message"])
         if self.use_queues:
             if stream_name not in self.queues:
                 self.queues[stream_name] = Queue()
@@ -112,7 +116,7 @@ class CloudWatchLogHandler(handler_base_class):
         else:
             self._submit_batch([msg], stream_name)
 
-    def batch_sender(self, queue, stream_name, send_interval, max_batch_size, max_batch_count):
+    def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count):
         #thread_local = threading.local()
         msg = None
         def size(msg):
@@ -126,7 +130,7 @@ class CloudWatchLogHandler(handler_base_class):
             cur_batch_deadline = time.time() + send_interval
             while True:
                 try:
-                    msg = queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
+                    msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
                 except queue.Empty:
                     pass
                 if msg == self.END \
@@ -134,17 +138,17 @@ class CloudWatchLogHandler(handler_base_class):
                    or cur_batch_msg_count >= max_batch_count \
                    or time.time() >= cur_batch_deadline:
                     self._submit_batch(cur_batch, stream_name)
-                    queue.task_done()
+                    my_queue.task_done()
                     break
                 elif msg:
                     cur_batch_size += size(msg)
                     cur_batch_msg_count += 1
                     cur_batch.append(msg)
-                    queue.task_done()
+                    my_queue.task_done()
 
     def flush(self):
         self.shutting_down = True
-        for queue in self.queues.values():
-            queue.put(self.END)
-        for queue in self.queues.values():
-            queue.join()
+        for q in self.queues.values():
+            q.put(self.END)
+        for q in self.queues.values():
+            q.join()

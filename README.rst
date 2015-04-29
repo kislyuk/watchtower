@@ -13,35 +13,52 @@ aggregates logs into batches to avoid sending an API request per each log messag
 deadline (60 seconds by default).
 
 Installation
-------------
+~~~~~~~~~~~~
 ::
-
     pip install pycwl
 
 Synopsis
---------
-Install `awscli <https://pypi.python.org/pypi/awscli>`_ and run ``aws configure``, then::
+~~~~~~~~
+Install `awscli <https://pypi.python.org/pypi/awscli>`_ and set your AWS credentials (run ``aws configure``), then::
 
-    import logging, pycwl
-    logging.basicConfig(level=logging.DEBUG)
+    import pycwl, logging
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.addHandler(pycwl.CloudWatchLogHandler())
     logger.info("Hi")
+    logger.info(dict(foo="bar", details={}))
 
 After running the example, you can see the log output in your `AWS console
 <https://console.aws.amazon.com/cloudwatch/home>`_.
 
 Example: Flask logging with PyCWL
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
-    TODO
+    import pycwl, flask, logging
 
-Reading and searching logs on the command line
-----------------------------------------------
-Install `awscli <https://pypi.python.org/pypi/awscli>`_ and `jq <http://stedolan.github.io/jq/>`_.
-::
+    logging.basicConfig(level=logging.INFO)
+    app = flask.Flask("loggable")
+    handler = pycwl.CloudWatchLogHandler()
+    app.logger.addHandler(handler)
+    logging.getLogger("werkzeug").addHandler(handler)
 
-    aws logs get-log-events --log-group-name pycwl --log-stream-name LOGGER_NAME | jq '.events[].message'
+    @app.route('/')
+    def hello_world():
+        return 'Hello World!'
+
+    if __name__ == '__main__':
+        app.run()
+
+(See also `http://flask.pocoo.org/docs/0.10/errorhandling/ <http://flask.pocoo.org/docs/0.10/errorhandling/>`_.)
+
+Examples: Querying CloudWatch logs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This section is not specific to PyCWL. It demonstrates the use of `awscli <https://pypi.python.org/pypi/awscli>`_ and
+`jq <http://stedolan.github.io/jq/>`_ to read and search CloudWatch logs on the command line.
+
+For the Flask example above, you can retrieve your application logs with the following two commands::
+    aws logs get-log-events --log-group-name pycwl --log-stream-name loggable | jq '.events[].message'
+    aws logs get-log-events --log-group-name pycwl --log-stream-name werkzeug | jq '.events[].message'
 
 Authors
 -------
