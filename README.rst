@@ -20,7 +20,9 @@ Installation
 
 Synopsis
 ~~~~~~~~
-Install `awscli <https://pypi.python.org/pypi/awscli>`_ and set your AWS credentials (run ``aws configure``), then::
+Install `awscli <https://pypi.python.org/pypi/awscli>`_ and set your AWS credentials (run ``aws configure``).
+
+.. code-block:: python
 
     import pycwl, logging
     logging.basicConfig(level=logging.INFO)
@@ -34,7 +36,8 @@ After running the example, you can see the log output in your `AWS console
 
 Example: Flask logging with PyCWL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-::
+
+.. code-block:: python
 
     import pycwl, flask, logging
 
