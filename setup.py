@@ -6,9 +6,9 @@ from setuptools import setup, find_packages
 install_requires = [line.rstrip() for line in open(os.path.join(os.path.dirname(__file__), "requirements.txt"))]
 
 setup(
-    name="pycwl",
+    name="watchtower",
     version="0.1.1",
-    url="https://github.com/kislyuk/pycwl",
+    url="https://github.com/kislyuk/watchtower",
     license="Apache Software License",
     author="Andrey Kislyuk",
     author_email="kislyuk@gmail.com",

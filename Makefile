@@ -6,7 +6,7 @@ env: requirements.txt
 	source env/bin/activate; pip list --outdated
 
 test: env
-	-pylint -E pycwl
+	-pylint -E watchtower
 	source env/bin/activate; ./test/test.py -v
 
 test3: env
