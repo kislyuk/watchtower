@@ -1,5 +1,5 @@
 Watchtower: Python CloudWatch Logging
-================================
+=====================================
 Watchtower is a log handler for `Amazon Web Services CloudWatch Logs
 <https://aws.amazon.com/blogs/aws/cloudwatch-log-service/>`_.
 
@@ -35,7 +35,7 @@ After running the example, you can see the log output in your `AWS console
 <https://console.aws.amazon.com/cloudwatch/home>`_.
 
 Example: Flask logging with Watchtower
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
