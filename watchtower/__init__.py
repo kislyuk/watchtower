@@ -15,7 +15,6 @@ from botocore.exceptions import ClientError
 handler_base_class = logging.Handler
 
 def _idempotent_create(_callable, *args, **kwargs):
-    #print("CREATE", _callable, args, kwargs)
     try:
         _callable(*args, **kwargs)
     except ClientError as e:
@@ -68,7 +67,6 @@ class CloudWatchLogHandler(handler_base_class):
     def _submit_batch(self, batch, stream_name):
         if len(batch) < 1:
             return
-        #print("Sending batch", len(batch), stream_name)
         kwargs = dict(logGroupName=self.log_group, logStreamName=stream_name,
                       logEvents=batch)
         if self.sequence_tokens[stream_name] is not None:
@@ -89,7 +87,6 @@ class CloudWatchLogHandler(handler_base_class):
             raise Exception("Failed to deliver logs: {}".format(response))
 
         self.sequence_tokens[stream_name] = response["nextSequenceToken"]
-        #print("Done sending batch", len(batch), stream_name)
 
     def emit(self, message):
         stream_name = message.name
