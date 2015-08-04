@@ -95,9 +95,14 @@ class CloudWatchLogHandler(handler_base_class):
                                logGroupName=self.log_group, logStreamName=stream_name)
             self.sequence_tokens[stream_name] = None
 
-        msg = dict(timestamp=int(message.created * 1000), message=message.msg)
-        if isinstance(msg["message"], collections.Mapping):
-            msg["message"] = json.dumps(msg["message"])
+        # You can either log a mapping, for instance a dictionary, or a string.
+        # If you log a mapping we will serialize it as json.
+        # If you log a string we will format it in a nice fashion.
+        msg = { 'timestamp' : int(message.created * 1000) }
+        if isinstance(message.msg, collections.Mapping):
+            msg["message"] = json.dumps(message.msg)
+        else:
+            msg["message"] = self.format(message)
         if self.use_queues:
             if stream_name not in self.queues:
                 self.queues[stream_name] = Queue()
