@@ -17,3 +17,5 @@ after_success:
 matrix:
   allow_failures:
     - python: pypy3
+
+sudo: false
