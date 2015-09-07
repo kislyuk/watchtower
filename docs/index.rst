@@ -3,7 +3,7 @@
 API documentation
 =================
 
-.. automodule:: pycwl
+.. automodule:: watchtower
    :members:
 
 

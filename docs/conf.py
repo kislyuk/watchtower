@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Pycwl documentation build configuration file, created by
+# Watchtower documentation build configuration file, created by
 # sphinx-quickstart on Sun Oct 13 23:09:16 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -40,7 +40,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'PyCWL'
+project = u'Watchtower'
 copyright = u'2014, Andrey Kislyuk'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -164,7 +164,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'PyCWLdoc'
+htmlhelp_basename = 'Watchtowerdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +183,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PyCWL.tex', u'PyCWL Documentation',
+  ('index', 'Watchtower.tex', u'Watchtower Documentation',
    u'Andrey Kislyuk', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pycwl', u'PyCWL Documentation',
+    ('index', 'Watchtower', u'Watchtower Documentation',
      [u'Andrey Kislyuk'], 1)
 ]
 
@@ -227,8 +227,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Pycwl', u'PyCWL Documentation',
-   u'Andrey Kislyuk', 'PyCWL', 'One line description of project.',
+  ('index', 'watchtower', u'Watchtower Documentation',
+   u'Andrey Kislyuk', 'Watchtower', 'One line description of project.',
    'Miscellaneous'),
 ]
 
