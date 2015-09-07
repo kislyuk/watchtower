@@ -7,7 +7,7 @@ install_requires = [line.rstrip() for line in open(os.path.join(os.path.dirname(
 
 setup(
     name="watchtower",
-    version="0.1.1",
+    version="0.1.2",
     url="https://github.com/kislyuk/watchtower",
     license="Apache Software License",
     author="Andrey Kislyuk",
