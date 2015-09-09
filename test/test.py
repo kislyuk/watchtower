@@ -8,7 +8,7 @@ import os, sys, unittest, collections, copy, re
 print(sys.version)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from pycwl import *
+from watchtower import *
 from eight import *
 
 class TestPyCWL(unittest.TestCase):
