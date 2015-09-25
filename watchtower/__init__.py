@@ -4,8 +4,10 @@ import os, sys, json, logging, time, threading, warnings, collections
 
 try:
     from Queue import Queue
+    from Queue import Empty
 except ImportError:
     from queue import Queue
+    from queue import Empty
 
 from eight import *
 
@@ -129,7 +131,7 @@ class CloudWatchLogHandler(handler_base_class):
             while True:
                 try:
                     msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
-                except queue.Empty:
+                except Empty:
                     pass
                 if msg == self.END \
                    or cur_batch_size + size(msg) > max_batch_size \
