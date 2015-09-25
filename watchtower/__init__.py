@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os, sys, json, logging, time, threading, warnings, collections
 
 try:
-    from Queue import Queue
+    import Queue
 except ImportError:
-    from queue import Queue
+    import queue as Queue
 
 from eight import *
 
@@ -100,7 +100,7 @@ class CloudWatchLogHandler(handler_base_class):
             msg["message"] = json.dumps(msg["message"])
         if self.use_queues:
             if stream_name not in self.queues:
-                self.queues[stream_name] = Queue()
+                self.queues[stream_name] = Queue.Queue()
                 thread = threading.Thread(target=self.batch_sender,
                                           args=(self.queues[stream_name], stream_name, self.send_interval,
                                                 self.max_batch_size, self.max_batch_count))
@@ -129,7 +129,7 @@ class CloudWatchLogHandler(handler_base_class):
             while True:
                 try:
                     msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
-                except queue.Empty:
+                except Queue.Empty:
                     pass
                 if msg == self.END \
                    or cur_batch_size + size(msg) > max_batch_size \
