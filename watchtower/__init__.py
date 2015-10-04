@@ -132,7 +132,8 @@ class CloudWatchLogHandler(handler_base_class):
                 except Queue.Empty:
                     # If the queue is empty, we don't want to reprocess the previous message
                     msg = None
-                if msg == self.END \
+                if msg is None \
+                   or msg == self.END \
                    or cur_batch_size + size(msg) > max_batch_size \
                    or cur_batch_msg_count >= max_batch_count \
                    or time.time() >= cur_batch_deadline:
