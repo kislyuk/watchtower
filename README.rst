@@ -58,7 +58,7 @@ Example: Flask logging with Watchtower
 
 Examples: Querying CloudWatch logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This section is not specific to Watchtower. It demonstrates the use of `awscli <https://pypi.python.org/pypi/awscli>`_ and
+This section is not specific to Watchtower. It demonstrates the use of `awscli <http://aws.amazon.com/cli/>`_ and
 `jq <http://stedolan.github.io/jq/>`_ to read and search CloudWatch logs on the command line.
 
 For the Flask example above, you can retrieve your application logs with the following two commands::
