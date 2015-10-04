@@ -130,13 +130,16 @@ class CloudWatchLogHandler(handler_base_class):
                 try:
                     msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
                 except Queue.Empty:
-                    pass
+                    # If the queue is empty, we don't want to reprocess the previous message
+                    msg = None
                 if msg == self.END \
                    or cur_batch_size + size(msg) > max_batch_size \
                    or cur_batch_msg_count >= max_batch_count \
                    or time.time() >= cur_batch_deadline:
                     self._submit_batch(cur_batch, stream_name)
-                    my_queue.task_done()
+                    if msg is not None:
+                        # We don't want to call task_done if the queue was empty and we didn't receive anything new
+                        my_queue.task_done()
                     break
                 elif msg:
                     cur_batch_size += size(msg)
