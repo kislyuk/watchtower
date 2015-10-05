@@ -1,3 +1,7 @@
+Version 0.1.3 (2015-10-04)
+--------------------------
+- Fix handling of empty queue at deadline timeout (PR #8). Thanks to @ryanmfw.
+
 Version 0.1.2 (2015-09-07)
 --------------------------
 - Packaging and documentation fixes.
