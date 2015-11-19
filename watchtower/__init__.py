@@ -12,6 +12,7 @@ from eight import *
 import boto3
 from botocore.exceptions import ClientError
 
+logging.getLogger('boto').setLevel(logging.WARNING)
 handler_base_class = logging.Handler
 
 def _idempotent_create(_callable, *args, **kwargs):
