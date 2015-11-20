@@ -1,5 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-
+from operator import itemgetter
 import os, sys, json, logging, time, threading, warnings, collections
 
 try:
@@ -67,8 +67,9 @@ class CloudWatchLogHandler(handler_base_class):
     def _submit_batch(self, batch, stream_name):
         if len(batch) < 1:
             return
+        sorted_batch = sorted(batch, key=itemgetter('timestamp'), reverse=False)
         kwargs = dict(logGroupName=self.log_group, logStreamName=stream_name,
-                      logEvents=batch)
+                      logEvents=sorted_batch)
         if self.sequence_tokens[stream_name] is not None:
             kwargs["sequenceToken"] = self.sequence_tokens[stream_name]
 
