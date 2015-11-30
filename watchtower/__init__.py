@@ -47,18 +47,22 @@ class CloudWatchLogHandler(handler_base_class):
         Maximum number of messages in the queue before sending a batch. From CloudWatch Logs documentation: **The
         maximum number of log events in a batch is 10,000.**
     :type max_batch_count: Integer
+    :param boto3_session: 
+        Session object to create boto3 `logs` clients. Accepts AWS credential, profile_name, and region_name from its
+        constructor. 
+    :type boto3_session: boto3.session.Session
     """
     END = 1
 
     def __init__(self, log_group=__name__, use_queues=True, send_interval=60, max_batch_size=1024*1024,
-                 max_batch_count=10000, *args, **kwargs):
+                 max_batch_count=10000, boto3_session=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.use_queues = use_queues
         self.send_interval = send_interval
         self.max_batch_size = max_batch_size
         self.max_batch_count = max_batch_count
-        self.cwl_client = boto3.client("logs")
+        self.cwl_client = (boto3_session or boto3).client("logs")
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
         self.shutting_down = False
