@@ -1,3 +1,7 @@
+Version 0.1.5 (2015-12-13)
+--------------------------
+- Allow custom boto3 sessions to be passed in for customization of service connection options (PR #15). Thanks to @clifflu.
+
 Version 0.1.4 (2015-11-20)
 --------------------------
 - Sort batches by timestamp before sending them. Avoids crashes due to out-of-order log streams fed to the logger and rejected by the CWL API (PR #14). Thanks to @haydenth.
