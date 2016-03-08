@@ -1,6 +1,6 @@
-Version 0.1.7 (2016-04-08)
+Version 0.1.8 (2016-04-08)
 --------------------------
-- Fix docs, part 2
+- Fix docs, skip failed release
 
 Version 0.1.6 (2015-12-13)
 --------------------------
