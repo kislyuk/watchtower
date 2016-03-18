@@ -62,10 +62,10 @@ class CloudWatchLogHandler(handler_base_class):
         self.send_interval = send_interval
         self.max_batch_size = max_batch_size
         self.max_batch_count = max_batch_count
-        self.cwl_client = (boto3_session or boto3).client("logs")
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
         self.shutting_down = False
+        self.cwl_client = (boto3_session or boto3).client("logs")
         _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
 
     def _submit_batch(self, batch, stream_name):
