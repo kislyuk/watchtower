@@ -31,6 +31,8 @@ class CloudWatchLogHandler(handler_base_class):
 
     :param log_group: Name of the CloudWatch log group to write logs to.
     :type log_group: String
+    :param stream_name: Name of the CloudWatch log stream to write logs to.
+    :type stream_name: String
     :param use_queues:
         If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue
         handler thread will be spawned.
@@ -54,10 +56,11 @@ class CloudWatchLogHandler(handler_base_class):
     """
     END = 1
 
-    def __init__(self, log_group=__name__, use_queues=True, send_interval=60, max_batch_size=1024*1024,
-                 max_batch_count=10000, boto3_session=None, *args, **kwargs):
+    def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
+                 max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
+        self.stream_name = stream_name
         self.use_queues = use_queues
         self.send_interval = send_interval
         self.max_batch_size = max_batch_size
@@ -91,10 +94,10 @@ class CloudWatchLogHandler(handler_base_class):
             # TODO: make this configurable/non-fatal
             raise Exception("Failed to deliver logs: {}".format(response))
 
-        self.sequence_tokens[stream_name] = response["nextSequenceToken"]
-
     def emit(self, message):
-        stream_name = message.name
+        stream_name = self.stream_name
+        if stream_name is None:
+            stream_name = message.name
         if stream_name not in self.sequence_tokens:
             _idempotent_create(self.cwl_client.create_log_stream,
                                logGroupName=self.log_group, logStreamName=stream_name)
