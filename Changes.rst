@@ -1,4 +1,8 @@
-Version 0.1.8 (2016-04-08)
+Version 0.2.0 (2016-03-22)
+--------------------------
+- Allow specifying log stream name (PR #16, #18). Thanks to @mianos, @fangyizhu.
+
+Version 0.1.8 (2016-03-08)
 --------------------------
 - Fix docs, skip failed release
 
