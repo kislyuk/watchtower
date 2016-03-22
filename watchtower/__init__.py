@@ -29,9 +29,11 @@ class CloudWatchLogHandler(handler_base_class):
     Create a new CloudWatch log handler object. This is the main entry point to the functionality of the module. See
     http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/WhatIsCloudWatchLogs.html for more information.
 
-    :param log_group: Name of the CloudWatch log group to write logs to.
+    :param log_group: Name of the CloudWatch log group to write logs to. By default, the name of this module is used.
     :type log_group: String
-    :param stream_name: Name of the CloudWatch log stream to write logs to.
+    :param stream_name:
+        Name of the CloudWatch log stream to write logs to. By default, the name of the logger that processed the
+        message is used.
     :type stream_name: String
     :param use_queues:
         If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue
