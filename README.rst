@@ -9,8 +9,9 @@ Loggly, but is more lightweight, cheaper, and tightly integrated with the rest o
 Watchtower, in turn, is a lightweight adapter between the `Python logging system
 <https://docs.python.org/library/logging.html>`_ and CloudWatch Logs. It uses the `boto3 AWS SDK
 <https://github.com/boto/boto3>`_, and lets you plug your application logging directly into CloudWatch without the need
-to install a system-wide log collector. It aggregates logs into batches to avoid sending an API request per each log
-message, while guaranteeing a delivery deadline (60 seconds by default).
+to install a system-wide log collector like `awscli-cwlogs <https://pypi.python.org/pypi/awscli-cwlogs>`. It aggregates logs
+into batches to avoid sending an API request per each log message, while guaranteeing a delivery deadline (60 seconds by
+default).
 
 Installation
 ~~~~~~~~~~~~
