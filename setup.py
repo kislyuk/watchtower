@@ -15,7 +15,7 @@ setup(
     description="Python CloudWatch Logging",
     long_description=open("README.rst").read(),
     install_requires=install_requires,
-    packages = find_packages(exclude=["test"]),
+    packages=find_packages(exclude=["test"]),
     platforms=["MacOS X", "Posix"],
     include_package_data=True,
     classifiers=[

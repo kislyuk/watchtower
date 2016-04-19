@@ -5,8 +5,10 @@ env: requirements.txt
 	source env/bin/activate; pip install --requirement=requirements.txt
 	source env/bin/activate; pip list --outdated
 
-test: env
-	-pylint -E watchtower
+lint:
+	./setup.py flake8
+
+test: env lint
 	source env/bin/activate; ./test/test.py -v
 
 test3: env
@@ -24,4 +26,4 @@ docs:
 install:
 	./setup.py install
 
-.PHONY: test release docs
+.PHONY: test release docs lint

@@ -7,7 +7,7 @@ try:
 except ImportError:
     import queue as Queue
 
-from eight import *
+# from eight import str, bytes, int
 
 import boto3
 from botocore.exceptions import ClientError
@@ -51,9 +51,9 @@ class CloudWatchLogHandler(handler_base_class):
         Maximum number of messages in the queue before sending a batch. From CloudWatch Logs documentation: **The
         maximum number of log events in a batch is 10,000.**
     :type max_batch_count: Integer
-    :param boto3_session: 
+    :param boto3_session:
         Session object to create boto3 `logs` clients. Accepts AWS credential, profile_name, and region_name from its
-        constructor. 
+        constructor.
     :type boto3_session: boto3.session.Session
     """
     END = 1

@@ -1,19 +1,19 @@
 language: python
 python:
-    - 3.4
-    - 3.5
-    - pypy3
+  - 3.4
+  - 3.5
+  - pypy3
 
 install:
-    - python setup.py install
-    - pip install coverage coveralls
+  - python setup.py install
+  - pip install coverage coveralls flake8
 
 script:
-    - coverage run --source=watchtower ./test/test.py
-#    - coverage report --show-missing
+  - coverage run --source=watchtower ./test/test.py
+#  - coverage report --show-missing
 
 after_success:
-    - coveralls
+  - coveralls
 
 matrix:
   allow_failures:
