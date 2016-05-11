@@ -55,11 +55,15 @@ class CloudWatchLogHandler(handler_base_class):
         Session object to create boto3 `logs` clients. Accepts AWS credential, profile_name, and region_name from its
         constructor.
     :type boto3_session: boto3.session.Session
+    :param create_log_group:
+        Create log group.  **True** by default.
+    :type create_log_group: Boolean
     """
     END = 1
 
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
-                 max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None, *args, **kwargs):
+                 max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None,
+                 create_log_group=True, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -71,7 +75,9 @@ class CloudWatchLogHandler(handler_base_class):
         self.threads = []
         self.shutting_down = False
         self.cwl_client = (boto3_session or boto3).client("logs")
-        _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
+        if create_log_group:
+            _idempotent_create(self.cwl_client.create_log_group,
+                               logGroupName=self.log_group)
 
     def _submit_batch(self, batch, stream_name):
         if len(batch) < 1:
