@@ -136,7 +136,7 @@ class CloudWatchLogHandler(handler_base_class):
         def size(msg):
             return len(msg["message"]) + 26
 
-        # See https://boto3.readthedocs.org/en/latest/reference/services/logs.html#logs.Client.put_log_events
+        # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
         while msg != self.END:
             cur_batch = [] if msg is None else [msg]
             cur_batch_size = sum(size(msg) for msg in cur_batch)

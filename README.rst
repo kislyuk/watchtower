@@ -82,7 +82,7 @@ Authors
 Links
 -----
 * `Project home page (GitHub) <https://github.com/kislyuk/watchtower>`_
-* `Documentation (Read the Docs) <https://watchtower.readthedocs.org/en/latest/>`_
+* `Documentation (Read the Docs) <https://watchtower.readthedocs.io/en/latest/>`_
 * `Package distribution (PyPI) <https://pypi.python.org/pypi/watchtower>`_
 * `AWS CLI CloudWatch Logs plugin <https://pypi.python.org/pypi/awscli-cwlogs>`_
 * `Docker awslogs adapter <https://github.com/docker/docker/blob/master/daemon/logger/awslogs/cloudwatchlogs.go>`_
@@ -106,4 +106,4 @@ Licensed under the terms of the `Apache License, Version 2.0 <http://www.apache.
 .. image:: https://img.shields.io/pypi/l/watchtower.svg
         :target: https://pypi.python.org/pypi/watchtower
 .. image:: https://readthedocs.org/projects/watchtower/badge/?version=latest
-        :target: https://watchtower.readthedocs.org/
+        :target: https://watchtower.readthedocs.io/
