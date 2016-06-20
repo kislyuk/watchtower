@@ -7,14 +7,14 @@ python:
 
 install:
   - python setup.py install
-  - pip install coverage coveralls flake8
+  - pip install coverage flake8
 
 script:
   - coverage run --source=watchtower ./test/test.py
 #  - coverage report --show-missing
 
 after_success:
-  - coveralls
+  - bash <(curl -s https://codecov.io/bash)
 
 matrix:
   allow_failures:

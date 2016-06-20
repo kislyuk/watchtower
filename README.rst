@@ -97,8 +97,8 @@ Licensed under the terms of the `Apache License, Version 2.0 <http://www.apache.
 
 .. image:: https://travis-ci.org/kislyuk/watchtower.svg
         :target: https://travis-ci.org/kislyuk/watchtower
-.. image:: https://coveralls.io/repos/kislyuk/watchtower/badge.svg?branch=master
-        :target: https://coveralls.io/r/kislyuk/watchtower?branch=master
+.. image:: https://codecov.io/github/kislyuk/watchtower/coverage.svg?branch=master
+        :target: https://codecov.io/github/kislyuk/watchtower?branch=master
 .. image:: https://img.shields.io/pypi/v/watchtower.svg
         :target: https://pypi.python.org/pypi/watchtower
 .. image:: https://img.shields.io/pypi/dm/watchtower.svg
