@@ -1,3 +1,9 @@
+Changes for v0.3.1 (2016-09-15)
+===============================
+
+-  Fix interrupted release
+-  Repo housekeeping
+
 Changes for v0.3.0 (2016-09-15)
 ===============================
 
