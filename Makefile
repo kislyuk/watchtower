@@ -20,8 +20,13 @@ init_docs:
 docs:
 	$(MAKE) -C docs html
 
-install:
-	./setup.py install
+install: clean
+	python ./setup.py bdist_wheel
+	pip install --upgrade dist/*.whl
+
+clean:
+	-rm -rf build dist
+	-rm -rf *.egg-info
 
 .PHONY: test release docs lint
 
