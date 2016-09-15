@@ -14,9 +14,6 @@ test: env lint
 test3: env
 	python3 ./test/test.py -v
 
-release: docs
-	python setup.py sdist bdist_wheel upload -s -i D2069255
-
 init_docs:
 	cd docs; sphinx-quickstart
 
@@ -27,3 +24,5 @@ install:
 	./setup.py install
 
 .PHONY: test release docs lint
+
+include common.mk
