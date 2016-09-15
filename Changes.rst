@@ -1,3 +1,8 @@
+Changes for v0.3.0 (2016-09-15)
+===============================
+
+-  Add option to avoid CreateLogGroup (#21; thanks to Hong Minhee)
+
 Version 0.2.0 (2016-03-22)
 --------------------------
 - Allow specifying log stream name (PR #16, #18). Thanks to @mianos, @fangyizhu.
