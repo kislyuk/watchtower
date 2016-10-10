@@ -7,8 +7,6 @@ try:
 except ImportError:
     import queue as Queue
 
-# from eight import str, bytes, int
-
 import boto3
 from botocore.exceptions import ClientError
 

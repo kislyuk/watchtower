@@ -30,3 +30,6 @@ npm-debug.log
 
 # OS X metadata files
 .DS_Store
+
+# Virtualenv created by Makefile
+/env/
