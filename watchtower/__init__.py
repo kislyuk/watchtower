@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 from operator import itemgetter
-import os, sys, json, logging, time, threading, warnings, collections
+import os, sys, json, logging, time, threading, warnings, collections, monotonic
 
 try:
     import Queue
@@ -139,10 +139,10 @@ class CloudWatchLogHandler(handler_base_class):
             cur_batch = [] if msg is None else [msg]
             cur_batch_size = sum(size(msg) for msg in cur_batch)
             cur_batch_msg_count = len(cur_batch)
-            cur_batch_deadline = time.time() + send_interval
+            cur_batch_deadline = monotonic.monotonic() + send_interval
             while True:
                 try:
-                    msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
+                    msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline - monotonic.monotonic()))
                 except Queue.Empty:
                     # If the queue is empty, we don't want to reprocess the previous message
                     msg = None
@@ -150,7 +150,7 @@ class CloudWatchLogHandler(handler_base_class):
                    or msg == self.END \
                    or cur_batch_size + size(msg) > max_batch_size \
                    or cur_batch_msg_count >= max_batch_count \
-                   or time.time() >= cur_batch_deadline:
+                   or monotonic.monotonic() >= cur_batch_deadline:
                     self._submit_batch(cur_batch, stream_name)
                     if msg is not None:
                         # We don't want to call task_done if the queue was empty and we didn't receive anything new
