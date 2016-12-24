@@ -5,11 +5,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import os, sys, unittest, collections, copy, re
 
-print(sys.version)
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from watchtower import *
-from eight import *
 
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
