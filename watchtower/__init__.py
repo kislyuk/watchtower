@@ -131,6 +131,7 @@ class CloudWatchLogHandler(handler_base_class):
     def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count):
         #thread_local = threading.local()
         msg = None
+
         def size(msg):
             return len(msg["message"]) + 26
 
