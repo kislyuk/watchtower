@@ -101,8 +101,6 @@ Licensed under the terms of the `Apache License, Version 2.0 <http://www.apache.
         :target: https://codecov.io/github/kislyuk/watchtower?branch=master
 .. image:: https://img.shields.io/pypi/v/watchtower.svg
         :target: https://pypi.python.org/pypi/watchtower
-.. image:: https://img.shields.io/pypi/dm/watchtower.svg
-        :target: https://pypi.python.org/pypi/watchtower
 .. image:: https://img.shields.io/pypi/l/watchtower.svg
         :target: https://pypi.python.org/pypi/watchtower
 .. image:: https://readthedocs.org/projects/watchtower/badge/?version=latest
