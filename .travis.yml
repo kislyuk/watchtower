@@ -7,12 +7,10 @@ python:
   - pypy3
 
 install:
-  - pip install .[test]
-  - pip install coverage flake8
+  - make install
 
 script:
-  - coverage run --source=watchtower ./test/test.py
-#  - coverage report --show-missing
+  - make test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
