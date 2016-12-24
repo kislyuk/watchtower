@@ -1,18 +1,13 @@
 SHELL=/bin/bash
 
-env: requirements.txt
-	virtualenv --python=python3 env
-	source env/bin/activate; pip install -r requirements.txt -r test-requirements.txt
-	source env/bin/activate; pip list --outdated
+test_deps:
+	pip install coverage flake8 wheel
 
-lint: env
-	source env/bin/activate; ./setup.py flake8
+lint: test_deps
+	./setup.py flake8
 
-test: env lint
-	source env/bin/activate; ./test/test.py -v
-
-test3: env
-	python3 ./test/test.py -v
+test: test_deps lint
+	coverage run --source=watchtower ./test/test.py
 
 init_docs:
 	cd docs; sphinx-quickstart
@@ -28,6 +23,6 @@ clean:
 	-rm -rf build dist
 	-rm -rf *.egg-info
 
-.PHONY: test release docs lint
+.PHONY: test release docs lint test_deps
 
 include common.mk
