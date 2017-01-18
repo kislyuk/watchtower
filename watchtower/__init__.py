@@ -85,6 +85,7 @@ class CloudWatchLogHandler(handler_base_class):
                       logEvents=sorted_batch)
         if self.sequence_tokens[stream_name] is not None:
             kwargs["sequenceToken"] = self.sequence_tokens[stream_name]
+        response = None
 
         for retry in range(max_retries):
             try:
@@ -97,7 +98,8 @@ class CloudWatchLogHandler(handler_base_class):
                 else:
                     raise
 
-        if "rejectedLogEventsInfo" in response:
+        # response can be None only when all retries have been exhausted
+        if response is None or "rejectedLogEventsInfo" in response:
             # TODO: make this configurable/non-fatal
             raise Exception("Failed to deliver logs: {}".format(response))
 
