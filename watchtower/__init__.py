@@ -142,6 +142,7 @@ class CloudWatchLogHandler(handler_base_class):
             return len(msg["message"]) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
 
         def truncate(msg):
+            warnings.warn("Log message size exceeds CWL max payload size, truncated", PyCWLWarning)
             return msg[:max_batch_size-CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE]
 
         # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
