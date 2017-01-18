@@ -139,7 +139,7 @@ class CloudWatchLogHandler(handler_base_class):
         msg = None
 
         def size(_msg):
-            return len(_msg["message"]) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
+            return (len(_msg["message"]) if isinstance(_msg, dict) else 1) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
 
         def truncate(_msg2):
             warnings.warn("Log message size exceeds CWL max payload size, truncated", PyCWLWarning)
