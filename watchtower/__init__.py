@@ -59,6 +59,9 @@ class CloudWatchLogHandler(handler_base_class):
     """
     END = 1
 
+    # extra size of meta information with each messages
+    EXTRA_MSG_PAYLOAD_SIZE = 26
+
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None,
                  create_log_group=True, *args, **kwargs):
@@ -136,7 +139,10 @@ class CloudWatchLogHandler(handler_base_class):
         msg = None
 
         def size(msg):
-            return len(msg["message"]) + 26
+            return len(msg["message"]) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
+
+        def truncate(msg):
+            return msg[:max_batch_size-CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE]
 
         # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
         while msg != self.END:
@@ -147,6 +153,8 @@ class CloudWatchLogHandler(handler_base_class):
             while True:
                 try:
                     msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
+                    if size(msg) > max_batch_size:
+                        msg = truncate(msg)
                 except Queue.Empty:
                     # If the queue is empty, we don't want to reprocess the previous message
                     msg = None
