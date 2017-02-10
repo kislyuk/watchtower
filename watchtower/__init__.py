@@ -111,7 +111,7 @@ class CloudWatchLogHandler(handler_base_class):
         if stream_name is None:
             stream_name = message.name
         else:
-            stream_name = stream_name.foramt(logger_name = message.name)
+            stream_name = stream_name.format(logger_name = message.name)
         if stream_name not in self.sequence_tokens:
             _idempotent_create(self.cwl_client.create_log_stream,
                                logGroupName=self.log_group, logStreamName=stream_name)
