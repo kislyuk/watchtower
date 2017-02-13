@@ -118,8 +118,8 @@ class CloudWatchLogHandler(handler_base_class):
             self.sequence_tokens[stream_name] = None
 
         msg = dict(timestamp=int(message.created * 1000), message=self.format(message))
-        if isinstance(msg["message"], collections.Mapping):
-            msg["message"] = json.dumps(msg["message"])
+        if isinstance(message.msg, collections.Mapping):
+            msg["message"] = json.dumps(message.msg)
         if self.use_queues:
             if stream_name not in self.queues:
                 self.queues[stream_name] = Queue.Queue()
