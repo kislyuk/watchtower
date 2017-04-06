@@ -176,6 +176,7 @@ class CloudWatchLogHandler(handler_base_class):
                     cur_batch_msg_count += 1
                     cur_batch.append(msg)
                     my_queue.task_done()
+                    break
 
     def flush(self):
         self.shutting_down = True
