@@ -10,7 +10,6 @@ class DjangoCloudWatchLogHandler(CloudWatchLogHandler):
     """
 
     def __init__(self, *args, **kwargs):
-        super(DjangoCloudWatchLogHandler, self).__init__(*args, **kwargs)
 
         client_kwargs = {}
         if hasattr(settings, 'AWS_ACCESS_KEY_ID'):
@@ -28,4 +27,6 @@ class DjangoCloudWatchLogHandler(CloudWatchLogHandler):
                 'region_name': getattr(settings, 'AWS_DEFAULT_REGION'),
             })
 
-        self.cwl_client = (kwargs.get('boto3_session') or boto3).client('logs', **client_kwargs)
+        kwargs['boto3_session'] = boto3.session.Session(**client_kwargs)
+
+        super(DjangoCloudWatchLogHandler, self).__init__(*args, **kwargs)
