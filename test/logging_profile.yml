@@ -1,0 +1,18 @@
+# AWS Config Profile
+version: 1
+formatters:
+    json:
+        format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
+    plaintext:
+        format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
+handlers:
+    watchtower:
+        formatter: json
+        level: DEBUG
+        (): watchtower.CloudWatchLogHandler
+        log_group: logger
+        stream_name:  loggable
+        boto3_profile_name: watchtowerlogger
+loggers:
+    root:
+        handlers: [watchtower]

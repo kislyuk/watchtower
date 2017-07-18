@@ -75,6 +75,125 @@ visualize it, and an alarm that sends an email::
 
     TODO
 
+Examples: Python Logging Config
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Python has the ability to provide a configuration file that can be loaded in order to separate the logging
+configuration from the code. Historically, Python has used the `logging.config.fileConfig` function to do
+so, however, that feature lacks the ability to use keyword args. Python 2.7 introduced a new feature to
+handle logging that is more robust - `logging.config.dictConfig` which profiles the ability to do more
+advanced Filters, but more importantly adds keyword args, thus allowing the `logging.config` functionality
+to instantiate Watchtower.
+
+The following are two example YAML configuration files that can be loaded using `PyYaml`. The resulting
+`dict` object can then be loaded into `logging.config.dictConfig`. The first example is a basic example
+that relies on the default configuration provided by `boto3`:
+
+.. code-block:: yaml
+    # Default AWS Config
+    version: 1
+    formatters:
+        json:
+            format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
+        plaintext:
+            format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
+    handlers:
+        console:
+            (): logging.StreamHandler
+            level: DEBUG
+            formatter: plaintext
+            stream: sys.stdout
+        watchtower:
+            formatter: json
+            level: DEBUG
+            (): watchtower.CloudWatchLogHandler
+            log_group: logger
+            stream_name:  loggable
+            send_interval: 1
+            create_log_group: False
+    loggers:
+        root:
+            handlers: [console, watchtower, logfile]
+        boto:
+            handlers: [console]
+        boto3:
+            handlers: [console]
+        botocore:
+            handlers: [console]
+        requests:
+            handlers: [console]
+
+
+The above works well if you can use the default configuration, or rely on environmental variables.
+However, sometimes one may want to use different credentials for logging than used for other functionality;
+in this case the `boto3_profile_name` option to Watchtower can be used to profile a profile name:
+
+.. code-block:: yaml
+    # AWS Config Profile
+    version: 1
+    formatters:
+        json:
+            format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
+        plaintext:
+            format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
+    handlers:
+        console:
+            (): logging.StreamHandler
+            level: DEBUG
+            formatter: plaintext
+            stream: sys.stdout
+        watchtower:
+            formatter: json
+            level: DEBUG
+            (): watchtower.CloudWatchLogHandler
+            log_group: logger
+            stream_name:  loggable
+            boto3_profile_name: watchtowerlogger
+            send_interval: 1
+            create_log_group: False
+    loggers:
+        root:
+            handlers: [console, watchtower, logfile]
+        boto:
+            handlers: [console]
+        boto3:
+            handlers: [console]
+        botocore:
+            handlers: [console]
+        requests:
+            handlers: [console]
+
+For the more advanced configuration, the following configuration file will profile
+the matching credentials to the `watchtowerlogger` profile:
+
+.. code-block:: cfg
+    [profile watchtowerlogger]
+    aws_access_key_id=MyAwsAccessKey
+    aws_secret_access_key=MyAwsSecretAccessKey
+    region=us-east-1
+
+Finally, the following shows how to load the configuration into the working application:
+
+.. code-block:: python
+
+    import logging.config
+
+    import flask
+    import yaml
+
+    app = flask.Flask("loggable")
+
+    @app.route('/')
+    def hello_world():
+        return 'Hello World!'
+
+    if __name__ == '__main__':
+        with open('logging.yml', 'r') as log_config:
+            config_yml = log_config.read()
+            config_dict = yaml.load(config_yml)
+            logging.config.dictConfig(config_dict)
+            app.run()
+
 Authors
 -------
 * Andrey Kislyuk
