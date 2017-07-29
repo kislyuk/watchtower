@@ -35,10 +35,31 @@ Install `awscli <https://pypi.python.org/pypi/awscli>`_ and set your AWS credent
 After running the example, you can see the log output in your `AWS console
 <https://console.aws.amazon.com/cloudwatch/home>`_.
 
+Example: Flask logging with Watchtower
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    import watchtower, flask, logging
+
+    logging.basicConfig(level=logging.INFO)
+    app = flask.Flask("loggable")
+    handler = watchtower.CloudWatchLogHandler()
+    app.logger.addHandler(handler)
+    logging.getLogger("werkzeug").addHandler(handler)
+
+    @app.route('/')
+    def hello_world():
+        return 'Hello World!'
+
+    if __name__ == '__main__':
+        app.run()
+
+(See also `http://flask.pocoo.org/docs/errorhandling/ <http://flask.pocoo.org/docs/errorhandling/>`_.)
+
 Example: Django logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-An example of watchtower in Django. 
-In your Django project, add the following to settings.py:
+This is an example of Watchtower integration with Django. In your Django project, add the following to `settings.py`:
 
 .. code-block:: python
 
@@ -91,31 +112,11 @@ In your Django project, add the following to settings.py:
         },
     }
 
-Se the AWS_* constants with your access data and every log statement from Django will be sent to Cloudwatch in the log group `MyLogGroupName` under the stream name `MyStreamName`.
+Using this configuration, every log statement from Django will be sent to Cloudwatch in the log group `MyLogGroupName`
+under the stream name `MyStreamName`. Instead of setting credentials via `AWS_ACCESS_KEY_ID` and other variables, you can also
+assign an IAM role to your instance and omit those parameters, prompting boto3 to ingest credentials from instance metadata.
 
-For further informations about the logging in Django check the official documentation: https://docs.djangoproject.com/en/dev/topics/logging/
-
-Example: Flask logging with Watchtower
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    import watchtower, flask, logging
-
-    logging.basicConfig(level=logging.INFO)
-    app = flask.Flask("loggable")
-    handler = watchtower.CloudWatchLogHandler()
-    app.logger.addHandler(handler)
-    logging.getLogger("werkzeug").addHandler(handler)
-
-    @app.route('/')
-    def hello_world():
-        return 'Hello World!'
-
-    if __name__ == '__main__':
-        app.run()
-
-(See also `http://flask.pocoo.org/docs/errorhandling/ <http://flask.pocoo.org/docs/errorhandling/>`_.)
+(See also the [Django logging documentation](https://docs.djangoproject.com/en/dev/topics/logging/)).
 
 Examples: Querying CloudWatch logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
