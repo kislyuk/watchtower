@@ -37,7 +37,8 @@ After running the example, you can see the log output in your `AWS console
 
 Example: Django logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-An example of watchtower in Django
+An example of watchtower in Django. 
+In your Django project, add the following to settings.py:
 
 .. code-block:: python
 
@@ -90,6 +91,9 @@ An example of watchtower in Django
         },
     }
 
+Se the AWS_* constants with your access data and every log statement from Django will be sent to Cloudwatch in the log group `MyLogGroupName` under the stream name `MyStreamName`.
+
+For further informations about the logging in Django check the official documentation: https://docs.djangoproject.com/en/dev/topics/logging/
 
 Example: Flask logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
