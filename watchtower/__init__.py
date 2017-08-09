@@ -8,6 +8,7 @@ except ImportError:
     import queue as Queue
 
 import boto3
+import boto3.session
 from botocore.exceptions import ClientError
 
 handler_base_class = logging.Handler
@@ -62,9 +63,19 @@ class CloudWatchLogHandler(handler_base_class):
     # extra size of meta information with each messages
     EXTRA_MSG_PAYLOAD_SIZE = 26
 
+    @staticmethod
+    def _get_client(boto3_session, boto3_profile_name):
+        if boto3_session:
+            return boto3_session
+
+        if boto3_profile_name:
+            return boto3.session.Session(profile_name=boto3_profile_name)
+
+        return boto3
+
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None,
-                 create_log_group=True, *args, **kwargs):
+                 boto3_profile_name=None, create_log_group=True, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -75,7 +86,9 @@ class CloudWatchLogHandler(handler_base_class):
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
         self.shutting_down = False
-        self.cwl_client = (boto3_session or boto3).client("logs")
+        self.cwl_client = self._get_client(
+            boto3_session, boto3_profile_name
+        ).client("logs")
         if create_log_group:
             _idempotent_create(self.cwl_client.create_log_group,
                                logGroupName=self.log_group)
