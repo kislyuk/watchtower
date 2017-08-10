@@ -64,7 +64,7 @@ class CloudWatchLogHandler(handler_base_class):
     EXTRA_MSG_PAYLOAD_SIZE = 26
 
     @staticmethod
-    def _get_client(boto3_session, boto3_profile_name):
+    def _get_session(boto3_session, boto3_profile_name):
         if boto3_session:
             return boto3_session
 
@@ -86,7 +86,7 @@ class CloudWatchLogHandler(handler_base_class):
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
         self.shutting_down = False
-        self.cwl_client = self._get_client(
+        self.cwl_client = self._get_session(
             boto3_session, boto3_profile_name
         ).client("logs")
         if create_log_group:
