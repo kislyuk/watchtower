@@ -15,11 +15,12 @@ import sys
 import tempfile
 import unittest
 
+import boto3
 import botocore.configloader
 import yaml
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from watchtower import *
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
+from watchtower import CloudWatchLogHandler
 
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
@@ -53,6 +54,8 @@ class TestPyCWL(unittest.TestCase):
         logger.addHandler(handler)
         handler.flush()
         logger.critical("msg")
+        handler.close()
+        logger.critical("msg")
 
     def test_json_logging(self):
         handler = CloudWatchLogHandler()
@@ -75,7 +78,7 @@ class TestPyCWL(unittest.TestCase):
                 logger.critical(dict(src="foo2", event=str(i), stack=[1, 2, 3, i], details={}))
 
     def test_logconfig_dictconfig_profile(self):
-        # NOTE: The below is a bit of a hack to get around how Travis-CI works so that it
+        # NOTE: The below is a bit of a hack to get around how Travis CI works so that it
         #   can be fully tested remotely too.
 
         # save the known configuration values from the ENV vars to a configuration file
@@ -84,17 +87,17 @@ class TestPyCWL(unittest.TestCase):
             boto3_config_file.write('[profile watchtowerlogger]\n')
             boto3_config_file.write(
                 'aws_access_key_id={0}\n'.format(
-                    os.environ['AWS_ACCESS_KEY_ID']
+                    boto3.Session().get_credentials().access_key
                 )
             )
             boto3_config_file.write(
                 'aws_secret_access_key={0}\n'.format(
-                    os.environ['AWS_SECRET_ACCESS_KEY']
+                    boto3.Session().get_credentials().secret_key
                 )
             )
             boto3_config_file.write(
                 'region={0}\n'.format(
-                    os.environ['AWS_DEFAULT_REGION']
+                    boto3.Session().region_name
                 )
             )
 

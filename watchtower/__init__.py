@@ -3,9 +3,9 @@ from operator import itemgetter
 import os, sys, json, logging, time, threading, warnings, collections
 
 try:
-    import Queue
+    import queue
 except ImportError:
-    import queue as Queue
+    import Queue as queue
 
 import boto3
 import boto3.session
@@ -59,6 +59,7 @@ class CloudWatchLogHandler(handler_base_class):
     :type create_log_group: Boolean
     """
     END = 1
+    FLUSH = 2
 
     # extra size of meta information with each messages
     EXTRA_MSG_PAYLOAD_SIZE = 26
@@ -135,7 +136,7 @@ class CloudWatchLogHandler(handler_base_class):
             msg["message"] = json.dumps(msg["message"])
         if self.use_queues:
             if stream_name not in self.queues:
-                self.queues[stream_name] = Queue.Queue()
+                self.queues[stream_name] = queue.Queue()
                 thread = threading.Thread(target=self.batch_sender,
                                           args=(self.queues[stream_name], stream_name, self.send_interval,
                                                 self.max_batch_size, self.max_batch_count))
@@ -162,7 +163,7 @@ class CloudWatchLogHandler(handler_base_class):
 
         # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
         while msg != self.END:
-            cur_batch = [] if msg is None else [msg]
+            cur_batch = [] if msg is None or msg == self.FLUSH else [msg]
             cur_batch_size = sum(size(msg) for msg in cur_batch)
             cur_batch_msg_count = len(cur_batch)
             cur_batch_deadline = time.time() + send_interval
@@ -171,11 +172,12 @@ class CloudWatchLogHandler(handler_base_class):
                     msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
                     if size(msg) > max_batch_size:
                         msg = truncate(msg)
-                except Queue.Empty:
+                except queue.Empty:
                     # If the queue is empty, we don't want to reprocess the previous message
                     msg = None
                 if msg is None \
                    or msg == self.END \
+                   or msg == self.FLUSH \
                    or cur_batch_size + size(msg) > max_batch_size \
                    or cur_batch_msg_count >= max_batch_count \
                    or time.time() >= cur_batch_deadline:
@@ -191,8 +193,15 @@ class CloudWatchLogHandler(handler_base_class):
                     my_queue.task_done()
 
     def flush(self):
+        for q in self.queues.values():
+            q.put(self.FLUSH)
+        for q in self.queues.values():
+            q.join()
+
+    def close(self):
         self.shutting_down = True
         for q in self.queues.values():
             q.put(self.END)
         for q in self.queues.values():
             q.join()
+        handler_base_class.close(self)
