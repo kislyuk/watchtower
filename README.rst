@@ -57,9 +57,33 @@ Example: Flask logging with Watchtower
 
 (See also `http://flask.pocoo.org/docs/errorhandling/ <http://flask.pocoo.org/docs/errorhandling/>`_.)
 
+Example: Chalice logging with Watchtower
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    import chalice, watchtower, logging
+
+    logger = logging.getLogger(__name__)
+    h = watchtower.CloudWatchLogHandler()
+    logger.setLevel(logging.INFO)
+    logger.addHandler(h)
+
+    app = chalice.Chalice(app_name='my_chalice_app')
+
+    @app.route('/')
+    def index():
+        logger.info("Request:")
+        logger.info(app.current_request.context)
+        h.flush()
+        return {'hello': 'world'}
+
+Note the optional use of ``watchtower.CloudWatchLogHandler.flush()`` to force logs to sync after handling each
+request. See https://github.com/aws/chalice for more information on Chalice.
+
 Example: Django logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This is an example of Watchtower integration with Django. In your Django project, add the following to `settings.py`:
+This is an example of Watchtower integration with Django. In your Django project, add the following to ``settings.py``:
 
 .. code-block:: python
 
@@ -112,9 +136,10 @@ This is an example of Watchtower integration with Django. In your Django project
         },
     }
 
-Using this configuration, every log statement from Django will be sent to Cloudwatch in the log group `MyLogGroupName`
-under the stream name `MyStreamName`. Instead of setting credentials via `AWS_ACCESS_KEY_ID` and other variables, you can also
-assign an IAM role to your instance and omit those parameters, prompting boto3 to ingest credentials from instance metadata.
+Using this configuration, every log statement from Django will be sent to Cloudwatch in the log group ``MyLogGroupName``
+under the stream name ``MyStreamName``. Instead of setting credentials via ``AWS_ACCESS_KEY_ID`` and other variables,
+you can also assign an IAM role to your instance and omit those parameters, prompting boto3 to ingest credentials from
+instance metadata.
 
 (See also the [Django logging documentation](https://docs.djangoproject.com/en/dev/topics/logging/)).
 
