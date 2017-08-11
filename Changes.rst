@@ -1,3 +1,12 @@
+Changes for v0.4.0 (2017-08-11)
+===============================
+
+-  Do not shut down on flush()
+
+-  Enhancement: boto3 auth profile option (#41)
+
+-  Documentation improvements
+
 
 
 
