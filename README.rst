@@ -57,30 +57,6 @@ Example: Flask logging with Watchtower
 
 (See also `http://flask.pocoo.org/docs/errorhandling/ <http://flask.pocoo.org/docs/errorhandling/>`_.)
 
-Example: Chalice logging with Watchtower
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    import chalice, watchtower, logging
-
-    logger = logging.getLogger(__name__)
-    h = watchtower.CloudWatchLogHandler()
-    logger.setLevel(logging.INFO)
-    logger.addHandler(h)
-
-    app = chalice.Chalice(app_name='my_chalice_app')
-
-    @app.route('/')
-    def index():
-        logger.info("Request:")
-        logger.info(app.current_request.context)
-        h.flush()
-        return {'hello': 'world'}
-
-Note the optional use of ``watchtower.CloudWatchLogHandler.flush()`` to force logs to sync after handling each
-request. See https://github.com/aws/chalice for more information on Chalice.
-
 Example: Django logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This is an example of Watchtower integration with Django. In your Django project, add the following to ``settings.py``:
