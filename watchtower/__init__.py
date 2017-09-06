@@ -20,7 +20,7 @@ def _idempotent_create(_callable, *args, **kwargs):
         if e.response.get("Error", {}).get("Code") != "ResourceAlreadyExistsException":
             raise
 
-class PyCWLWarning(UserWarning):
+class WatchtowerWarning(UserWarning):
     pass
 
 class CloudWatchLogHandler(handler_base_class):
@@ -113,12 +113,13 @@ class CloudWatchLogHandler(handler_base_class):
                                                                "InvalidSequenceTokenException"):
                     kwargs["sequenceToken"] = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
                 else:
-                    raise
+                    warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
+            except Exception as e:
+                warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
 
         # response can be None only when all retries have been exhausted
         if response is None or "rejectedLogEventsInfo" in response:
-            # TODO: make this configurable/non-fatal
-            raise Exception("Failed to deliver logs: {}".format(response))
+            warnings.warn("Failed to deliver logs: {}".format(response), WatchtowerWarning)
 
     def emit(self, message):
         stream_name = self.stream_name
@@ -144,7 +145,7 @@ class CloudWatchLogHandler(handler_base_class):
                 thread.daemon = True
                 thread.start()
             if self.shutting_down:
-                warnings.warn("Received message after logging system shutdown", PyCWLWarning)
+                warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
             else:
                 self.queues[stream_name].put(msg)
         else:
@@ -158,7 +159,7 @@ class CloudWatchLogHandler(handler_base_class):
             return (len(_msg["message"]) if isinstance(_msg, dict) else 1) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
 
         def truncate(_msg2):
-            warnings.warn("Log message size exceeds CWL max payload size, truncated", PyCWLWarning)
+            warnings.warn("Log message size exceeds CWL max payload size, truncated", WatchtowerWarning)
             _msg2["message"] = _msg2["message"][:max_batch_size-CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE]
             return _msg2
 
