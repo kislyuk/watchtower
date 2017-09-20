@@ -1,3 +1,12 @@
+Changes for v0.4.1 (2017-09-20)
+===============================
+
+-  Warn instead of crashing logger on delivery failure
+
+-  Support for django log (#39)
+
+-  Fix for unhashble type error (fixes issue #44) (#45)
+
 Changes for v0.4.0 (2017-08-11)
 ===============================
 
