@@ -132,10 +132,11 @@ class CloudWatchLogHandler(handler_base_class):
                                logGroupName=self.log_group, logStreamName=stream_name)
             self.sequence_tokens[stream_name] = None
 
-        msg = dict(timestamp=int(message.created * 1000), message=message)
-        if isinstance(msg["message"], collections.Mapping):
-            msg["message"] = json.dumps(msg["message"])
-        msg["message"] = self.format(msg["message"])
+        if isinstance(message.msg, collections.Mapping):
+            message.msg = json.dumps(message.msg)
+
+        cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
+
         if self.use_queues:
             if stream_name not in self.queues:
                 self.queues[stream_name] = queue.Queue()
@@ -148,9 +149,9 @@ class CloudWatchLogHandler(handler_base_class):
             if self.shutting_down:
                 warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
             else:
-                self.queues[stream_name].put(msg)
+                self.queues[stream_name].put(cwl_message)
         else:
-            self._submit_batch([msg], stream_name)
+            self._submit_batch([cwl_message], stream_name)
 
     def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count):
         #thread_local = threading.local()
