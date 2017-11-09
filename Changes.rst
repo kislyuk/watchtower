@@ -1,3 +1,8 @@
+Changes for v0.5.2 (2017-11-09)
+===============================
+
+Fix broken formatting in README
+
 Changes for v0.5.1 (2017-11-09)
 ===============================
 
