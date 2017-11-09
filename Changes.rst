@@ -1,3 +1,8 @@
+Changes for v0.5.1 (2017-11-09)
+===============================
+
+Fix JSON message serialization, part 2
+
 Changes for v0.5.0 (2017-11-09)
 ===============================
 
