@@ -141,17 +141,18 @@ Examples: Python Logging Config
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Python has the ability to provide a configuration file that can be loaded in order to separate the logging
-configuration from the code. Historically, Python has used the `logging.config.fileConfig` function to do
+configuration from the code. Historically, Python has used the ``logging.config.fileConfig`` function to do
 so, however, that feature lacks the ability to use keyword args. Python 2.7 introduced a new feature to
-handle logging that is more robust - `logging.config.dictConfig` which profiles the ability to do more
-advanced Filters, but more importantly adds keyword args, thus allowing the `logging.config` functionality
+handle logging that is more robust - ``logging.config.dictConfig`` which profiles the ability to do more
+advanced Filters, but more importantly adds keyword args, thus allowing the ``logging.config`` functionality
 to instantiate Watchtower.
 
-The following are two example YAML configuration files that can be loaded using `PyYaml`. The resulting
-`dict` object can then be loaded into `logging.config.dictConfig`. The first example is a basic example
-that relies on the default configuration provided by `boto3`:
+The following are two example YAML configuration files that can be loaded using ``PyYaml``. The resulting
+``dict`` object can then be loaded into ``logging.config.dictConfig``. The first example is a basic example
+that relies on the default configuration provided by ``boto3``:
 
 .. code-block:: yaml
+
     # Default AWS Config
     version: 1
     formatters:
@@ -188,9 +189,10 @@ that relies on the default configuration provided by `boto3`:
 
 The above works well if you can use the default configuration, or rely on environmental variables.
 However, sometimes one may want to use different credentials for logging than used for other functionality;
-in this case the `boto3_profile_name` option to Watchtower can be used to profile a profile name:
+in this case the ``boto3_profile_name`` option to Watchtower can be used to profile a profile name:
 
 .. code-block:: yaml
+
     # AWS Config Profile
     version: 1
     formatters:
@@ -226,9 +228,10 @@ in this case the `boto3_profile_name` option to Watchtower can be used to profil
             handlers: [console]
 
 For the more advanced configuration, the following configuration file will profile
-the matching credentials to the `watchtowerlogger` profile:
+the matching credentials to the ``watchtowerlogger`` profile:
 
 .. code-block:: cfg
+
     [profile watchtowerlogger]
     aws_access_key_id=MyAwsAccessKey
     aws_secret_access_key=MyAwsSecretAccessKey
