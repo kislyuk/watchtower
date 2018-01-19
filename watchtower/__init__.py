@@ -76,7 +76,9 @@ class CloudWatchLogHandler(handler_base_class):
 
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None,
-                 boto3_profile_name=None, create_log_group=True, *args, **kwargs):
+                 boto3_profile_name=None, create_log_group=True,
+                 nonblocking=False,
+                 *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -90,9 +92,9 @@ class CloudWatchLogHandler(handler_base_class):
         self.cwl_client = self._get_session(
             boto3_session, boto3_profile_name
         ).client("logs")
+        self.nonblocking = nonblocking
         if create_log_group:
-            _idempotent_create(self.cwl_client.create_log_group,
-                               logGroupName=self.log_group)
+            self._create_log_group()
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
@@ -121,6 +123,22 @@ class CloudWatchLogHandler(handler_base_class):
         if response is None or "rejectedLogEventsInfo" in response:
             warnings.warn("Failed to deliver logs: {}".format(response), WatchtowerWarning)
 
+    def _create_log_group(self, logStreamName=None):
+        kwargs = {'logGroupName': self.log_group}
+        if logStreamName:
+            kwargs['logStreamName'] = logStreamName
+        if self.nonblocking:
+            thread = threading.Thread(
+                target=_idempotent_create,
+                args=(self.cwl_client.create_log_group, ),
+                kwargs=kwargs
+            )
+            self.threads.append(thread)
+            thread.daemon = True
+            thread.start()
+        else:
+            _idempotent_create(self.cwl_client.create_log_group, **kwargs)
+
     def emit(self, message):
         stream_name = self.stream_name
         if stream_name is None:
@@ -128,8 +146,7 @@ class CloudWatchLogHandler(handler_base_class):
         else:
             stream_name = stream_name.format(logger_name=message.name)
         if stream_name not in self.sequence_tokens:
-            _idempotent_create(self.cwl_client.create_log_stream,
-                               logGroupName=self.log_group, logStreamName=stream_name)
+            self._create_log_group(logStreamName=stream_name)
             self.sequence_tokens[stream_name] = None
 
         if isinstance(message.msg, collections.Mapping):
