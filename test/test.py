@@ -117,6 +117,12 @@ class TestPyCWL(unittest.TestCase):
                     logger.critical(dict(src="foo3", event=str(i), stack=[1, 2, 3, i], details={}))
                 boto_config.assert_called()
 
+    def test_empty_message(self):
+        handler = CloudWatchLogHandler(use_queues=False)
+        logger = logging.getLogger("empty")
+        logger.addHandler(handler)
+        logger.critical("")
+
 
 if __name__ == "__main__":
     unittest.main()

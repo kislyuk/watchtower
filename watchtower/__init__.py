@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+from copy import copy
 from operator import itemgetter
 import os, sys, json, logging, time, threading, warnings, collections
 
@@ -133,9 +134,16 @@ class CloudWatchLogHandler(handler_base_class):
             self.sequence_tokens[stream_name] = None
 
         if isinstance(message.msg, collections.Mapping):
-            message.msg = json.dumps(message.msg)
+            _message = copy(message)
+            _message.msg = json.dumps(message.msg)
+        elif not message.msg:
+            # Replace zero-length messages with newlines for CloudWatch to be able to ingest them
+            _message = copy(message)
+            _message.msg = "\n"
+        else:
+            _message = message
 
-        cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
+        cwl_message = dict(timestamp=int(_message.created * 1000), message=self.format(_message))
 
         if self.use_queues:
             if stream_name not in self.queues:
