@@ -23,6 +23,8 @@ import yaml
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
 from watchtower import CloudWatchLogHandler
 
+USING_PYTHON2 = True if sys.version_info < (3, 0) else False
+
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
         self.test_path = os.path.dirname(__file__)
@@ -121,7 +123,7 @@ class TestPyCWL(unittest.TestCase):
     def test_terminating_process(self):
         cwd = os.path.dirname(__file__)
         proc = subprocess.Popen(['python', 'run_logging.py'], cwd=cwd)
-        proc.wait(10)
+        proc.wait() if USING_PYTHON2 else proc.wait(10)
 
 
 if __name__ == "__main__":
