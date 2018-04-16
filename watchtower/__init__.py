@@ -197,12 +197,19 @@ class CloudWatchLogHandler(handler_base_class):
                     my_queue.task_done()
 
     def flush(self):
+        if self.shutting_down:
+            return
         for q in self.queues.values():
             q.put(self.FLUSH)
         for q in self.queues.values():
             q.join()
 
     def close(self):
+        # Avoid waiting on the queue again when the close called twice.
+        # Otherwise the second call, as no thread is running, it will hang
+        # forever
+        if self.shutting_down:
+            return
         self.shutting_down = True
         for q in self.queues.values():
             q.put(self.END)
