@@ -14,6 +14,7 @@ import re
 import sys
 import tempfile
 import unittest
+import subprocess
 
 import boto3
 import botocore.configloader
@@ -116,6 +117,11 @@ class TestPyCWL(unittest.TestCase):
                 for i in range(10):
                     logger.critical(dict(src="foo3", event=str(i), stack=[1, 2, 3, i], details={}))
                 boto_config.assert_called()
+
+    def test_terminating_process(self):
+        cwd = os.path.dirname(__file__)
+        proc = subprocess.Popen(['python', 'run_logging.py'], cwd=cwd)
+        proc.wait(10)
 
 
 if __name__ == "__main__":
