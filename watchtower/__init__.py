@@ -86,13 +86,10 @@ class CloudWatchLogHandler(handler_base_class):
         self.max_batch_count = max_batch_count
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
-        self.shutting_down = False
-        self.cwl_client = self._get_session(
-            boto3_session, boto3_profile_name
-        ).client("logs")
+        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs")
         if create_log_group:
-            _idempotent_create(self.cwl_client.create_log_group,
-                               logGroupName=self.log_group)
+            _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
+        self.creating_log_stream, self.shutting_down = False, False
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
@@ -122,15 +119,19 @@ class CloudWatchLogHandler(handler_base_class):
             warnings.warn("Failed to deliver logs: {}".format(response), WatchtowerWarning)
 
     def emit(self, message):
+        if self.creating_log_stream:
+            return  # Avoid infinite recursion when asked to log a message as our own side effect
         stream_name = self.stream_name
         if stream_name is None:
             stream_name = message.name
         else:
             stream_name = stream_name.format(logger_name=message.name)
         if stream_name not in self.sequence_tokens:
+            self.creating_log_stream = True
             _idempotent_create(self.cwl_client.create_log_stream,
                                logGroupName=self.log_group, logStreamName=stream_name)
             self.sequence_tokens[stream_name] = None
+            self.creating_log_stream = False
 
         if isinstance(message.msg, collections.Mapping):
             message.msg = json.dumps(message.msg)
