@@ -91,7 +91,6 @@ This is an example of Watchtower integration with Django. In your Django project
                 'datefmt': "%Y-%m-%d %H:%M:%S"
             },
         },
-
         'handlers': {
             'watchtower': {
                 'level': 'DEBUG',
@@ -101,7 +100,7 @@ This is an example of Watchtower integration with Django. In your Django project
                          'stream_name': 'MyStreamName',
                 'formatter': 'aws',
             },
-        }
+        },
         'loggers': {
             'django': {
                 'level': 'INFO',
