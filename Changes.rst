@@ -1,3 +1,10 @@
+Changes for v0.5.5 (2019-01-22)
+===============================
+
+-  Add ‘strftime’ parameter to stream_name formatter (#71)
+
+-  Documentation improvements
+
 Changes for v0.5.4 (2018-11-02)
 ===============================
 
