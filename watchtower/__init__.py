@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+from datetime import datetime
 from operator import itemgetter
 import os, sys, json, logging, time, threading, warnings, collections
 
@@ -32,7 +33,8 @@ class CloudWatchLogHandler(handler_base_class):
     :type log_group: String
     :param stream_name:
         Name of the CloudWatch log stream to write logs to. By default, the name of the logger that processed the
-        message is used. Accepts a format string parameter of {logger_name}.
+        message is used. Accepts a format string parameter of {logger_name}, as well as {strftime:%m-%d-y}, where
+        any strftime string can be used to include the current UTC datetime in the stream name.
     :type stream_name: String
     :param use_queues:
         If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue
@@ -125,7 +127,7 @@ class CloudWatchLogHandler(handler_base_class):
         if stream_name is None:
             stream_name = message.name
         else:
-            stream_name = stream_name.format(logger_name=message.name)
+            stream_name = stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
         if stream_name not in self.sequence_tokens:
             self.creating_log_stream = True
             _idempotent_create(self.cwl_client.create_log_stream,
