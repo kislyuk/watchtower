@@ -5,6 +5,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import collections
 import copy
+from datetime import datetime
+
 import mock
 import logging
 import logging.config
@@ -66,6 +68,13 @@ class TestPyCWL(unittest.TestCase):
         logger.addHandler(handler)
         for i in range(10):
             logger.critical(dict(src="foo", event=str(i), stack=[1, 2, 3, i], details={}))
+
+    def test_json_logging_object_with_datetime(self):
+        handler = CloudWatchLogHandler()
+        logger = logging.getLogger("json")
+        logger.addHandler(handler)
+        for i in range(10):
+            logger.critical(dict(src="foo", event=str(i), stack=[1, 2, 3, i], details=dict(time=datetime(2019, 1, 1))))
 
     def test_multiple_handlers(self):
         # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit. This can probably be fixed with thread locals.
