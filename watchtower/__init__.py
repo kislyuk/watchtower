@@ -1,5 +1,5 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-from datetime import datetime
+from datetime import date, datetime
 from operator import itemgetter
 import os, sys, json, logging, time, threading, warnings, collections
 
@@ -21,8 +21,18 @@ def _idempotent_create(_callable, *args, **kwargs):
         if e.response.get("Error", {}).get("Code") != "ResourceAlreadyExistsException":
             raise
 
+
+def _json_serialize_default(o):
+    """
+    A standard 'default' json serializer function that will serialize datetime objects as ISO format.
+    """
+    if isinstance(o, (date, datetime)):
+        return o.isoformat()
+
+
 class WatchtowerWarning(UserWarning):
     pass
+
 
 class CloudWatchLogHandler(handler_base_class):
     """
@@ -59,6 +69,12 @@ class CloudWatchLogHandler(handler_base_class):
     :param create_log_group:
         Create log group.  **True** by default.
     :type create_log_group: Boolean
+    :param json_serialize_default:
+        The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
+        documentation on 'json' for more explanation about the 'default' parameter.
+        https://docs.python.org/3/library/json.html#json.dump
+        https://docs.python.org/2/library/json.html#json.dump
+    :type json_serialize_default: Function
     """
     END = 1
     FLUSH = 2
@@ -78,12 +94,13 @@ class CloudWatchLogHandler(handler_base_class):
 
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None,
-                 boto3_profile_name=None, create_log_group=True, *args, **kwargs):
+                 boto3_profile_name=None, create_log_group=True, json_serialize_default=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
         self.use_queues = use_queues
         self.send_interval = send_interval
+        self.json_serialize_default = json_serialize_default or _json_serialize_default
         self.max_batch_size = max_batch_size
         self.max_batch_count = max_batch_count
         self.queues, self.sequence_tokens = {}, {}
@@ -136,7 +153,7 @@ class CloudWatchLogHandler(handler_base_class):
             self.creating_log_stream = False
 
         if isinstance(message.msg, collections.Mapping):
-            message.msg = json.dumps(message.msg)
+            message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
         cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
 
