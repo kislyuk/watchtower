@@ -105,10 +105,13 @@ class CloudWatchLogHandler(handler_base_class):
         self.max_batch_count = max_batch_count
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
+        self.creating_log_stream, self.shutting_down = False, False
+
+        # Creating session should be the final call in __init__, after all instance attributes are set.
+        # This ensures that failing to create the session will not result in any missing attribtues.
         self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs")
         if create_log_group:
             _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
-        self.creating_log_stream, self.shutting_down = False, False
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
