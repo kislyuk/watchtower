@@ -150,10 +150,12 @@ class CloudWatchLogHandler(handler_base_class):
             stream_name = stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
         if stream_name not in self.sequence_tokens:
             self.creating_log_stream = True
-            _idempotent_create(self.cwl_client.create_log_stream,
-                               logGroupName=self.log_group, logStreamName=stream_name)
-            self.sequence_tokens[stream_name] = None
-            self.creating_log_stream = False
+            try:
+                _idempotent_create(self.cwl_client.create_log_stream,
+                                   logGroupName=self.log_group, logStreamName=stream_name)
+                self.sequence_tokens[stream_name] = None
+            finally:
+                self.creating_log_stream = False
 
         if isinstance(message.msg, collections.Mapping):
             message.msg = json.dumps(message.msg, default=self.json_serialize_default)
