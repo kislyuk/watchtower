@@ -1,3 +1,14 @@
+Changes for v0.6.0 (2019-05-22)
+===============================
+
+-  Set creating_log_stream to False when creation fails. (#72)
+
+-  Define all instance attributes before attempting to create boto
+   session (#76)
+
+-  Serialize objects with datetimes, and allow custom serializer default
+   functions to be used (#73)
+
 Changes for v0.5.5 (2019-01-22)
 ===============================
 

@@ -8,7 +8,7 @@ tests_require = [line.rstrip() for line in open(os.path.join(os.path.dirname(__f
 
 setup(
     name="watchtower",
-    version="0.5.5",
+    version="0.6.0",
     url="https://github.com/kislyuk/watchtower",
     license="Apache Software License",
     author="Andrey Kislyuk",
