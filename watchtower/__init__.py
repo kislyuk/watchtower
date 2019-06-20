@@ -69,6 +69,9 @@ class CloudWatchLogHandler(handler_base_class):
     :param create_log_group:
         Create log group.  **True** by default.
     :type create_log_group: Boolean
+    :param create_log_stream:
+        Create log stream.  **True** by default.
+    :type create_log_stream: Boolean
     :param json_serialize_default:
         The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
         documentation on 'json' for more explanation about the 'default' parameter.
@@ -94,7 +97,8 @@ class CloudWatchLogHandler(handler_base_class):
 
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None,
-                 boto3_profile_name=None, create_log_group=True, json_serialize_default=None, *args, **kwargs):
+                 boto3_profile_name=None, create_log_group=True, create_log_stream=True,
+                 json_serialize_default=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -106,6 +110,7 @@ class CloudWatchLogHandler(handler_base_class):
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
         self.creating_log_stream, self.shutting_down = False, False
+        self.create_log_stream = create_log_stream
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
@@ -149,13 +154,17 @@ class CloudWatchLogHandler(handler_base_class):
         else:
             stream_name = stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
         if stream_name not in self.sequence_tokens:
-            self.creating_log_stream = True
-            try:
-                _idempotent_create(self.cwl_client.create_log_stream,
-                                   logGroupName=self.log_group, logStreamName=stream_name)
+            if self.create_log_stream:
+                self.creating_log_stream = True
+                try:
+                    _idempotent_create(self.cwl_client.create_log_stream,
+                                       logGroupName=self.log_group,
+                                       logStreamName=stream_name)
+                    self.sequence_tokens[stream_name] = None
+                finally:
+                    self.creating_log_stream = False
+            else:
                 self.sequence_tokens[stream_name] = None
-            finally:
-                self.creating_log_stream = False
 
         if isinstance(message.msg, collections.Mapping):
             message.msg = json.dumps(message.msg, default=self.json_serialize_default)
