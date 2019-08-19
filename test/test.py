@@ -27,6 +27,7 @@ from watchtower import CloudWatchLogHandler
 
 USING_PYTHON2 = True if sys.version_info < (3, 0) else False
 
+
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
         self.test_path = os.path.dirname(__file__)
@@ -133,6 +134,12 @@ class TestPyCWL(unittest.TestCase):
         cwd = os.path.dirname(__file__)
         proc = subprocess.Popen(['python', 'run_logging.py'], cwd=cwd)
         proc.wait() if USING_PYTHON2 else proc.wait(10)
+
+    def test_empty_message(self):
+        handler = CloudWatchLogHandler(use_queues=False)
+        logger = logging.getLogger("empty")
+        logger.addHandler(handler)
+        logger.critical("")
 
 
 if __name__ == "__main__":
