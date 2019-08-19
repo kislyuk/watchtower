@@ -83,7 +83,7 @@ class TestPyCWL(unittest.TestCase):
     def test_logconfig_dictconfig_basic(self):
         with open(self.log_config_yaml_basic, 'r') as yaml_input:
             config_yml = yaml_input.read()
-            config_dict = yaml.load(config_yml)
+            config_dict = yaml.load(config_yml, Loader=yaml.SafeLoader)
             logging.config.dictConfig(config_dict)
             logger = logging.getLogger('root')
             for i in range(10):
@@ -122,7 +122,7 @@ class TestPyCWL(unittest.TestCase):
 
             with open(self.log_config_yaml_profile, 'r') as yaml_input:
                 config_yml = yaml_input.read()
-                config_dict = yaml.load(config_yml)
+                config_dict = yaml.load(config_yml, Loader=yaml.SafeLoader)
                 logging.config.dictConfig(config_dict)
                 logger = logging.getLogger('root')
                 for i in range(10):

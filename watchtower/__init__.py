@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 from datetime import date, datetime
 from operator import itemgetter
-import os, sys, json, logging, time, threading, warnings, collections
+import json, logging, time, threading, warnings, collections
 
 try:
     import queue
@@ -13,6 +13,7 @@ import boto3.session
 from botocore.exceptions import ClientError
 
 handler_base_class = logging.Handler
+
 
 def _idempotent_create(_callable, *args, **kwargs):
     try:
@@ -96,7 +97,7 @@ class CloudWatchLogHandler(handler_base_class):
         return boto3
 
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
-                 max_batch_size=1024*1024, max_batch_count=10000, boto3_session=None,
+                 max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, create_log_stream=True,
                  json_serialize_default=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
@@ -188,7 +189,6 @@ class CloudWatchLogHandler(handler_base_class):
             self._submit_batch([cwl_message], stream_name)
 
     def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count):
-        #thread_local = threading.local()
         msg = None
 
         def size(_msg):
@@ -196,7 +196,7 @@ class CloudWatchLogHandler(handler_base_class):
 
         def truncate(_msg2):
             warnings.warn("Log message size exceeds CWL max payload size, truncated", WatchtowerWarning)
-            _msg2["message"] = _msg2["message"][:max_batch_size-CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE]
+            _msg2["message"] = _msg2["message"][:max_batch_size - CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE]
             return _msg2
 
         # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
@@ -207,7 +207,7 @@ class CloudWatchLogHandler(handler_base_class):
             cur_batch_deadline = time.time() + send_interval
             while True:
                 try:
-                    msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline-time.time()))
+                    msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline - time.time()))
                     if size(msg) > max_batch_size:
                         msg = truncate(msg)
                 except queue.Empty:
