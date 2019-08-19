@@ -67,10 +67,10 @@ class CloudWatchLogHandler(handler_base_class):
         constructor.
     :type boto3_session: boto3.session.Session
     :param create_log_group:
-        Create log group.  **True** by default.
+        Create CloudWatch Logs log group if it does not exist.  **True** by default.
     :type create_log_group: Boolean
     :param create_log_stream:
-        Create log stream.  **True** by default.
+        Create CloudWatch Logs log stream if it does not exist.  **True** by default.
     :type create_log_stream: Boolean
     :param json_serialize_default:
         The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
