@@ -124,10 +124,11 @@ class CloudWatchLogHandler(handler_base_class):
             _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
 
         if log_group_retention:
-            _idempotent_create(self.cwl_client.cwl_client.put_retention_policy(
+            _idempotent_create(
+                self.cwl_client.cwl_client.put_retention_policy,
                 logGroupName=self.log_group,
                 retentionInDays=self.log_group_retention
-            ))
+            )
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
