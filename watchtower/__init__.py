@@ -70,6 +70,9 @@ class CloudWatchLogHandler(handler_base_class):
     :param create_log_group:
         Create CloudWatch Logs log group if it does not exist.  **True** by default.
     :type create_log_group: Boolean
+    :param log_group_retention_days:
+        Sets the retention policy of the log group in days.  **None** by default.
+    :type log_group_retention_days: Integer
     :param create_log_stream:
         Create CloudWatch Logs log stream if it does not exist.  **True** by default.
     :type create_log_stream: Boolean
@@ -98,8 +101,8 @@ class CloudWatchLogHandler(handler_base_class):
 
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
-                 boto3_profile_name=None, create_log_group=True, create_log_stream=True,
-                 json_serialize_default=None, *args, **kwargs):
+                 boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
+                 create_log_stream=True, json_serialize_default=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -112,12 +115,20 @@ class CloudWatchLogHandler(handler_base_class):
         self.threads = []
         self.creating_log_stream, self.shutting_down = False, False
         self.create_log_stream = create_log_stream
+        self.log_group_retention_days = log_group_retention_days
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
         self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs")
         if create_log_group:
             _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
+
+        if log_group_retention_days:
+            _idempotent_create(
+                self.cwl_client.cwl_client.put_retention_policy,
+                logGroupName=self.log_group,
+                retentionInDays=self.log_group_retention_days
+            )
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
