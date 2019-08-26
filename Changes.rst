@@ -1,3 +1,8 @@
+Changes for v0.7.1 (2019-08-26)
+===============================
+
+-  Re-release 0.7.0 due to Homebrew-related automation failure
+
 Changes for v0.7.0 (2019-08-26)
 ===============================
 
