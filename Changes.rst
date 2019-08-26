@@ -1,3 +1,8 @@
+Changes for v0.7.2 (2019-08-26)
+===============================
+
+Fix another Homebrew-related release failure
+
 Changes for v0.7.1 (2019-08-26)
 ===============================
 
