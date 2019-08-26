@@ -1,3 +1,12 @@
+Changes for v0.7.0 (2019-08-26)
+===============================
+
+-  Add put_retention_policy (#79)
+
+-  Add create_log_stream (#77)
+
+-  Minor test and doc improvements
+
 Changes for v0.6.0 (2019-05-22)
 ===============================
 
