@@ -125,7 +125,7 @@ class CloudWatchLogHandler(handler_base_class):
 
         if log_group_retention_days:
             _idempotent_create(
-                self.cwl_client.cwl_client.put_retention_policy,
+                self.cwl_client.put_retention_policy,
                 logGroupName=self.log_group,
                 retentionInDays=self.log_group_retention_days
             )
