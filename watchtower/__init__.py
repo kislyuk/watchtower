@@ -1,12 +1,17 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 from datetime import date, datetime
 from operator import itemgetter
-import json, logging, time, threading, warnings, collections
+import json, logging, time, threading, warnings
 
 try:
     import queue
 except ImportError:
     import Queue as queue
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 import boto3
 import boto3.session
@@ -178,7 +183,7 @@ class CloudWatchLogHandler(handler_base_class):
             else:
                 self.sequence_tokens[stream_name] = None
 
-        if isinstance(message.msg, collections.Mapping):
+        if isinstance(message.msg, Mapping):
             message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
         cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
