@@ -5,7 +5,7 @@ import json, logging, time, threading, warnings
 
 try:
     import queue
-except ImportError:	
+except ImportError:
     import Queue as queue
 
 try:
@@ -160,7 +160,7 @@ class CloudWatchLogHandler(handler_base_class):
                     kwargs["sequenceToken"] = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
                 else:
                     warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
-                    ret = sorted_batch
+                ret = sorted_batch
             except Exception as e:
                 warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
                 ret = sorted_batch
