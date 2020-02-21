@@ -15,7 +15,8 @@ except ImportError:
 
 import boto3
 import boto3.session
-from botocore.exceptions import ClientError
+from boto3.exceptions import Boto3Error
+from botocore.exceptions import ClientError, BotoCoreError
 
 handler_base_class = logging.Handler
 
@@ -119,7 +120,11 @@ class CloudWatchLogHandler(handler_base_class):
         self.max_batch_count = max_batch_count
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
-        self.creating_log_stream, self.shutting_down = False, False
+        self.shutting_down = False
+        self.creating_log_stream = False
+        self.creating_log_group = False
+        self.creating_log_retention = False
+
         self.create_log_stream = create_log_stream
         self.log_group_retention_days = log_group_retention_days
 
@@ -129,15 +134,9 @@ class CloudWatchLogHandler(handler_base_class):
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
         self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs")
-        if create_log_group:
-            _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
+        self._log_group_initialised = not create_log_group
+        self._log_retention_initialised = not log_group_retention_days
 
-        if log_group_retention_days:
-            _idempotent_create(
-                self.cwl_client.put_retention_policy,
-                logGroupName=self.log_group,
-                retentionInDays=self.log_group_retention_days
-            )
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
@@ -153,17 +152,24 @@ class CloudWatchLogHandler(handler_base_class):
         for retry in range(max_retries):
             try:
                 response = self.cwl_client.put_log_events(**kwargs)
-                break
             except ClientError as e:
-                if e.response.get("Error", {}).get("Code") in ("DataAlreadyAcceptedException",
-                                                               "InvalidSequenceTokenException"):
+                code = e.response.get("Error", {}).get("Code")
+                if code in ("DataAlreadyAcceptedException", "InvalidSequenceTokenException"):
                     kwargs["sequenceToken"] = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
+                    ret = sorted_batch
+                elif code in ("ResourceNotFoundException",):
+                    ret = []
+                    break
                 else:
-                    warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
-                ret = sorted_batch
+                    warnings.warn("Failed to deliver logs (boto error): {}".format(e), WatchtowerWarning)
+                    ret = sorted_batch
             except Exception as e:
-                warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
+                warnings.warn("Failed to deliver logs (unknown error): {}".format(e), WatchtowerWarning)
                 ret = sorted_batch
+            else:
+                ret = []
+                break
+
 
         # response can be None only when all retries have been exhausted
         if response is None or "rejectedLogEventsInfo" in response:
@@ -173,8 +179,36 @@ class CloudWatchLogHandler(handler_base_class):
         return ret
 
     def emit(self, message):
-        if self.creating_log_stream:
+
+        if self.creating_log_stream or self.creating_log_group or self.creating_log_retention:
             return  # Avoid infinite recursion when asked to log a message as our own side effect
+
+        if not self._log_group_initialised:
+            self.creating_log_group = True
+            try:
+                _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
+            except (BotoCoreError, Boto3Error):
+                warnings.warn('Failed to create log group: %s' %self.log_group)
+            else:
+                self._log_group_initialised = True
+            finally:
+                self.creating_log_group = False
+
+        if not self._log_retention_initialised:
+            self.creating_log_retention = True
+            try:
+                _idempotent_create(
+                    self.cwl_client.put_retention_policy,
+                    logGroupName=self.log_group,
+                    retentionInDays=self.log_group_retention_days
+                )
+            except (BotoCoreError, Boto3Error):
+                warnings.warn('Failed to create log retention policy: %s' %self.log_group)
+            else:
+                self._log_retention_initialised = True
+            finally:
+                self.creating_log_retention = False
+
         stream_name = self.stream_name
         if stream_name is None:
             stream_name = message.name
@@ -187,40 +221,47 @@ class CloudWatchLogHandler(handler_base_class):
                     _idempotent_create(self.cwl_client.create_log_stream,
                                        logGroupName=self.log_group,
                                        logStreamName=stream_name)
+                except (BotoCoreError, Boto3Error):
+                    warnings.warn('Failed to create log stream: %s' %stream_name)
+                else:
                     self.sequence_tokens[stream_name] = None
                 finally:
                     self.creating_log_stream = False
             else:
                 self.sequence_tokens[stream_name] = None
 
+        #------ operate on cache
         if isinstance(message.msg, Mapping):
             message.msg = json.dumps(message.msg, default=self.json_serialize_default)
-
-        #------ operate on cache
         self.messages_cache.put((int(message.created * 1000), self.format(message)))
-        cwl_messages = []
-        while not self.messages_cache.empty():
-            cwl_messages.append(self.messages_cache.get())
 
-        #------ process messages
-        for cwl_message in cwl_messages:
-            if self.use_queues:
-                if stream_name not in self.queues:
-                    self.queues[stream_name] = queue.Queue()
-                    thread = threading.Thread(target=self.batch_sender,
-                                              args=(self.queues[stream_name], stream_name, self.send_interval,
-                                                    self.max_batch_size, self.max_batch_count))
-                    self.threads.append(thread)
-                    thread.daemon = True
-                    thread.start()
-                if self.shutting_down:
-                    warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
+        #---- process messages only if aws resources have been initialised
+        if self._log_group_initialised and \
+           self._log_retention_initialised and \
+           stream_name in self.sequence_tokens:
+            #------ process messages
+            cwl_messages = []
+            while not self.messages_cache.empty():
+                cwl_messages.append(self.messages_cache.get())
+
+            for cwl_message in cwl_messages:
+                if self.use_queues:
+                    if stream_name not in self.queues:
+                        self.queues[stream_name] = queue.Queue()
+                        thread = threading.Thread(target=self.batch_sender,
+                                                  args=(self.queues[stream_name], stream_name, self.send_interval,
+                                                        self.max_batch_size, self.max_batch_count))
+                        self.threads.append(thread)
+                        thread.daemon = True
+                        thread.start()
+                    if self.shutting_down:
+                        warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
+                    else:
+                        self.queues[stream_name].put(cwl_message)
                 else:
-                    self.queues[stream_name].put(cwl_message)
-            else:
-                failed_messages = self._submit_batch([cwl_message], stream_name)
-                for failed_message in failed_messages:
-                    self.messages_cache.put(failed_message)
+                    failed_messages = self._submit_batch([cwl_message], stream_name)
+                    for failed_message in failed_messages:
+                        self.messages_cache.put(failed_message)
 
         #------ truncate cache
         while self.messages_cache.qsize() > self.max_cache_length:
