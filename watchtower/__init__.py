@@ -3,7 +3,10 @@ from datetime import date, datetime
 from operator import itemgetter
 import json, logging, time, threading, warnings
 
-import queue
+try:
+    import queue
+except ImportError:	
+    import Queue as queue
 
 try:
     from collections.abc import Mapping
