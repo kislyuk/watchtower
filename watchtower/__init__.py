@@ -195,10 +195,9 @@ class CloudWatchLogHandler(handler_base_class):
 
         #------ operate on cache
         self.messages_cache.put((int(message.created * 1000), self.format(message)))
-        with self.messages_cache.mutex:
-            cwl_messages = []
-            while not self.messages_cache.empty():
-                cwl_messages.append(self.messages_cache.get())
+        cwl_messages = []
+        while not self.messages_cache.empty():
+            cwl_messages.append(self.messages_cache.get())
 
         #------ process messages
         for cwl_message in cwl_messages:
