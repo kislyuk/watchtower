@@ -139,9 +139,9 @@ class CloudWatchLogHandler(handler_base_class):
 
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
-        if len(batch) < 1:
-            return
         ret = []
+        if len(batch) < 1:
+            return ret
         sorted_batch = sorted(batch, key=lambda x: x[0], reverse=False)
         kwargs = dict(logGroupName=self.log_group, logStreamName=stream_name,
                       logEvents=[{'timestamp':t,'message':m} for t,m in sorted_batch])
