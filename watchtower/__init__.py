@@ -3,10 +3,7 @@ from datetime import date, datetime
 from operator import itemgetter
 import json, logging, time, threading, warnings
 
-try:
-    import queue
-except ImportError:
-    import Queue as queue
+import queue
 
 try:
     from collections.abc import Mapping
@@ -107,7 +104,8 @@ class CloudWatchLogHandler(handler_base_class):
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
-                 create_log_stream=True, json_serialize_default=None, *args, **kwargs):
+                 create_log_stream=True, json_serialize_default=None,
+                 max_cache_length=1000000, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -121,6 +119,9 @@ class CloudWatchLogHandler(handler_base_class):
         self.creating_log_stream, self.shutting_down = False, False
         self.create_log_stream = create_log_stream
         self.log_group_retention_days = log_group_retention_days
+
+        self.messages_cache = queue.PriorityQueue()
+        self.max_cache_length = max_cache_length
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
@@ -138,9 +139,10 @@ class CloudWatchLogHandler(handler_base_class):
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
             return
-        sorted_batch = sorted(batch, key=itemgetter('timestamp'), reverse=False)
+        ret = []
+        sorted_batch = sorted(batch, key=lambda x: x[0], reverse=False)
         kwargs = dict(logGroupName=self.log_group, logStreamName=stream_name,
-                      logEvents=sorted_batch)
+                      logEvents=[{'timestamp':t,'message':m} for t,m in sorted_batch])
         if self.sequence_tokens[stream_name] is not None:
             kwargs["sequenceToken"] = self.sequence_tokens[stream_name]
         response = None
@@ -155,12 +157,17 @@ class CloudWatchLogHandler(handler_base_class):
                     kwargs["sequenceToken"] = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
                 else:
                     warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
+                    ret = sorted_batch
             except Exception as e:
                 warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
+                ret = sorted_batch
 
         # response can be None only when all retries have been exhausted
         if response is None or "rejectedLogEventsInfo" in response:
             warnings.warn("Failed to deliver logs: {}".format(response), WatchtowerWarning)
+            if response is None:
+                ret = sorted_batch
+        return ret
 
     def emit(self, message):
         if self.creating_log_stream:
@@ -186,23 +193,39 @@ class CloudWatchLogHandler(handler_base_class):
         if isinstance(message.msg, Mapping):
             message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
-        cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
+        #------ operate on cache
+        self.messages_cache.put((int(message.created * 1000), self.format(message)))
+        with self.messages_cache.mutex:
+            cwl_messages = []
+            while not self.messages_cache.empty():
+                cwl_messages.append(self.messages_cache.get())
 
-        if self.use_queues:
-            if stream_name not in self.queues:
-                self.queues[stream_name] = queue.Queue()
-                thread = threading.Thread(target=self.batch_sender,
-                                          args=(self.queues[stream_name], stream_name, self.send_interval,
-                                                self.max_batch_size, self.max_batch_count))
-                self.threads.append(thread)
-                thread.daemon = True
-                thread.start()
-            if self.shutting_down:
-                warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
+        #------ process messages
+        for cwl_message in cwl_messages:
+            if self.use_queues:
+                if stream_name not in self.queues:
+                    self.queues[stream_name] = queue.Queue()
+                    thread = threading.Thread(target=self.batch_sender,
+                                              args=(self.queues[stream_name], stream_name, self.send_interval,
+                                                    self.max_batch_size, self.max_batch_count))
+                    self.threads.append(thread)
+                    thread.daemon = True
+                    thread.start()
+                if self.shutting_down:
+                    warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
+                else:
+                    self.queues[stream_name].put(cwl_message)
             else:
-                self.queues[stream_name].put(cwl_message)
-        else:
-            self._submit_batch([cwl_message], stream_name)
+                failed_messages = self._submit_batch([cwl_message], stream_name)
+                for failed_message in failed_messages:
+                    self.messages_cache.put(failed_message)
+
+        #------ truncate cache
+        while self.messages_cache.qsize() > self.max_cache_length:
+            try:
+                _ = self.messages_cache.get_nowait()
+            except queue.Empty:
+                break
 
     def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count):
         msg = None
@@ -235,7 +258,9 @@ class CloudWatchLogHandler(handler_base_class):
                    or cur_batch_size + size(msg) > max_batch_size \
                    or cur_batch_msg_count >= max_batch_count \
                    or time.time() >= cur_batch_deadline:
-                    self._submit_batch(cur_batch, stream_name)
+                    failed_messages = self._submit_batch(cur_batch, stream_name)
+                    for failed_message in failed_messages:
+                        self.messages_cache.put(failed_message)
                     if msg is not None:
                         # We don't want to call task_done if the queue was empty and we didn't receive anything new
                         my_queue.task_done()
