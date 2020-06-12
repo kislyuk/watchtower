@@ -87,6 +87,9 @@ class CloudWatchLogHandler(handler_base_class):
         https://docs.python.org/3/library/json.html#json.dump
         https://docs.python.org/2/library/json.html#json.dump
     :type json_serialize_default: Function
+    :param serialize_dicts:
+        Serialize messages passed as a dictionary prior to formatting. **True** by default.
+    :type serialize_dicts: Boolean
     """
     END = 1
     FLUSH = 2
@@ -107,13 +110,15 @@ class CloudWatchLogHandler(handler_base_class):
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
-                 create_log_stream=True, json_serialize_default=None, *args, **kwargs):
+                 create_log_stream=True, json_serialize_default=None, serialize_dicts=True,
+                 *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
         self.use_queues = use_queues
         self.send_interval = send_interval
         self.json_serialize_default = json_serialize_default or _json_serialize_default
+        self.serialize_dicts = serialize_dicts
         self.max_batch_size = max_batch_size
         self.max_batch_count = max_batch_count
         self.queues, self.sequence_tokens = {}, {}
@@ -183,7 +188,7 @@ class CloudWatchLogHandler(handler_base_class):
             else:
                 self.sequence_tokens[stream_name] = None
 
-        if isinstance(message.msg, Mapping):
+        if self.serialize_dicts and isinstance(message.msg, Mapping):
             message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
         cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
