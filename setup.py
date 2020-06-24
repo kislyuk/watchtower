@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import os
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 install_requires = [line.rstrip() for line in open(os.path.join(os.path.dirname(__file__), "requirements.txt"))]
 tests_require = [line.rstrip() for line in open(os.path.join(os.path.dirname(__file__), "test-requirements.txt"))]

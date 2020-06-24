@@ -1,5 +1,6 @@
 # coding: utf-8
 import boto3
+
 from django.conf import settings
 from watchtower import CloudWatchLogHandler
 

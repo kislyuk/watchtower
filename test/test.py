@@ -5,25 +5,25 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import collections
 import copy
-from datetime import datetime
-
-import mock
 import logging
 import logging.config
 import os
 import os.path
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
-import subprocess
+from datetime import datetime
 
 import boto3
 import botocore.configloader
+import mock
 import yaml
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
 from watchtower import CloudWatchLogHandler
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
 
 USING_PYTHON2 = True if sys.version_info < (3, 0) else False
 

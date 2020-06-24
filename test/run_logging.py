@@ -2,9 +2,9 @@ import logging
 import os
 import sys
 
+from watchtower import CloudWatchLogHandler
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
-from watchtower import CloudWatchLogHandler
 
 handler = CloudWatchLogHandler(stream_name='run_logging')
 logger = logging.getLogger('run_logging')

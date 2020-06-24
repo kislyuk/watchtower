@@ -1,10 +1,11 @@
 SHELL=/bin/bash
 
 test_deps:
-	pip install coverage flake8 wheel pyyaml mock boto3
+	pip install coverage flake8 isort wheel pyyaml mock boto3
 
 lint: test_deps
 	./setup.py flake8
+	isort --check-only --diff
 
 test: test_deps lint
 	coverage run --source=watchtower ./test/test.py

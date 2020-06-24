@@ -1,7 +1,16 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+
+import json
+import logging
+import threading
+import time
+import warnings
 from datetime import date, datetime
 from operator import itemgetter
-import json, logging, time, threading, warnings
+
+import boto3
+import boto3.session
+from botocore.exceptions import ClientError
 
 try:
     import queue
@@ -13,9 +22,6 @@ try:
 except ImportError:
     from collections import Mapping
 
-import boto3
-import boto3.session
-from botocore.exceptions import ClientError
 
 handler_base_class = logging.Handler
 
