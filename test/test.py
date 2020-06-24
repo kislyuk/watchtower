@@ -15,8 +15,10 @@ import os.path
 import re
 import sys
 import tempfile
+import time
 import unittest
 import subprocess
+import uuid
 
 import boto3
 import botocore.configloader
@@ -33,6 +35,23 @@ class TestPyCWL(unittest.TestCase):
         self.test_path = os.path.dirname(__file__)
         self.log_config_yaml_basic = '{0}/logging.yml'.format(self.test_path)
         self.log_config_yaml_profile = '{0}/logging_profile.yml'.format(self.test_path)
+
+    @staticmethod
+    def _make_dict_config(**handler_props):
+        return {
+            "version": 1,
+            "handlers": {
+                "watchtower": {
+                    "()": "watchtower.CloudWatchLogHandler",
+                    **handler_props,
+                },
+            },
+            "loggers": {
+                "root": {
+                    "handlers": ["watchtower"],
+                },
+            },
+        }
 
     def test_basic_pycwl_statements(self):
         h = CloudWatchLogHandler()
@@ -140,6 +159,71 @@ class TestPyCWL(unittest.TestCase):
         logger = logging.getLogger("empty")
         logger.addHandler(handler)
         logger.critical("")
+
+    def test_create_log_stream_on_emit(self):
+        log_group = "py_watchtower_test"
+        log_stream = str(uuid.uuid4())
+        config_dict = self._make_dict_config(
+            log_group=log_group,
+            stream_name=log_stream,
+            use_queues=False,
+        )
+        logging.config.dictConfig(config_dict)
+        logger = logging.getLogger("root")
+        cw = boto3.client("logs")
+        self.addCleanup(
+            cw.delete_log_stream,
+            logGroupName=log_group,
+            logStreamName=log_stream,
+        )
+
+        # Log stream does not exist at this point, emitting a record creates it.
+        logger.error("foo")
+
+        # Wait until message appears in log stream.
+        cw = boto3.client("logs")
+        retries = 10
+        while True:
+            response = cw.get_log_events(
+                logGroupName=log_group,
+                logStreamName=log_stream,
+            )
+            events = response["events"]
+            if not events:
+                retries -= 1
+                time.sleep(0.5)
+            else:
+                break
+
+        [event] = events
+        self.assertEqual(event["message"], "foo")
+
+        with mock.patch("watchtower._idempotent_create") as create_log_stream_mock:
+            logger.error("another")
+        create_log_stream_mock.assert_not_called()
+
+    def test_existing_log_stream_does_not_create_log_stream(self):
+        log_group = "py_watchtower_test"
+        log_stream = "existing_stream"
+        cw = boto3.client("logs")
+        config_dict = self._make_dict_config(
+            log_group=log_group,
+            stream_name=log_stream,
+            use_queues=False,
+        )
+        logging.config.dictConfig(config_dict)
+        logger = logging.getLogger("root")
+        cw.create_log_stream(logGroupName=log_group, logStreamName=log_stream)
+        self.addCleanup(
+            cw.delete_log_stream,
+            logGroupName=log_group,
+            logStreamName=log_stream,
+        )
+
+        with mock.patch("watchtower._idempotent_create") as create_log_stream_mock:
+            logger.error("message")
+
+        create_log_stream_mock.assert_not_called()
 
 
 if __name__ == "__main__":
