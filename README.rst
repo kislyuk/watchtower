@@ -64,7 +64,7 @@ This is an example of Watchtower integration with Django. In your Django project
 .. code-block:: python
 
     from boto3.session import Session
-    
+
     AWS_ACCESS_KEY_ID = 'your access key'
     AWS_SECRET_ACCESS_KEY = 'your secret access key'
     AWS_REGION_NAME = 'your region'
