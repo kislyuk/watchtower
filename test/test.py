@@ -22,7 +22,6 @@ import boto3
 import botocore.configloader
 import yaml
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
 from watchtower import CloudWatchLogHandler
 
 USING_PYTHON2 = True if sys.version_info < (3, 0) else False
