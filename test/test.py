@@ -139,7 +139,3 @@ class TestPyCWL(unittest.TestCase):
         logger = logging.getLogger("empty")
         logger.addHandler(handler)
         logger.critical("")
-
-
-if __name__ == "__main__":
-    unittest.main()
