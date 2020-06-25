@@ -22,3 +22,5 @@ matrix:
 
 sudo: false
 cache: pip
+dist: xenial
+os: linux
