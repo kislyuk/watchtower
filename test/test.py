@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
-import collections
-import copy
-from datetime import datetime
-
-import mock
 import logging
 import logging.config
 import os
 import os.path
-import re
+import subprocess
 import sys
 import tempfile
 import unittest
-import subprocess
+from datetime import datetime
 
 import boto3
 import botocore.configloader
+import mock
 import yaml
 
 from watchtower import CloudWatchLogHandler
@@ -39,7 +36,7 @@ class TestPyCWL(unittest.TestCase):
         for i in range(5):
             logger = logging.getLogger("logger{}".format(i))
             logger.addHandler(h)
-            #logger.addHandler(CloudWatchLogHandler(use_queues=False))
+            # logger.addHandler(CloudWatchLogHandler(use_queues=False))
             loggers.append(logger)
         for i in range(10001):
             for logger in loggers:
@@ -77,7 +74,8 @@ class TestPyCWL(unittest.TestCase):
             logger.critical(dict(src="foo", event=str(i), stack=[1, 2, 3, i], details=dict(time=datetime(2019, 1, 1))))
 
     def test_multiple_handlers(self):
-        # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit. This can probably be fixed with thread locals.
+        # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit.
+        # This can probably be fixed with thread locals.
         pass
 
     def test_logconfig_dictconfig_basic(self):
