@@ -144,6 +144,15 @@ class CloudWatchLogHandler(handler_base_class):
                 if e.response.get("Error", {}).get("Code") in ("DataAlreadyAcceptedException",
                                                                "InvalidSequenceTokenException"):
                     kwargs["sequenceToken"] = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
+                elif e.response["Error"]["Code"] == "ResourceNotFoundException":
+                    if self.create_log_stream:
+                        self.creating_log_stream = True
+                        try:
+                            _idempotent_create(self.cwl_client.create_log_stream,
+                                               logGroupName=self.log_group,
+                                               logStreamName=stream_name)
+                        finally:
+                            self.creating_log_stream = False
                 else:
                     warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
             except Exception as e:
@@ -162,17 +171,7 @@ class CloudWatchLogHandler(handler_base_class):
         else:
             stream_name = stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
         if stream_name not in self.sequence_tokens:
-            if self.create_log_stream:
-                self.creating_log_stream = True
-                try:
-                    _idempotent_create(self.cwl_client.create_log_stream,
-                                       logGroupName=self.log_group,
-                                       logStreamName=stream_name)
-                    self.sequence_tokens[stream_name] = None
-                finally:
-                    self.creating_log_stream = False
-            else:
-                self.sequence_tokens[stream_name] = None
+            self.sequence_tokens[stream_name] = None
 
         if isinstance(message.msg, Mapping):
             message.msg = json.dumps(message.msg, default=self.json_serialize_default)
