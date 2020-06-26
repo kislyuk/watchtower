@@ -1,8 +1,17 @@
-from collections.abc import Mapping
+from __future__ import absolute_import, division, print_function, unicode_literals
 from datetime import date, datetime
 from operator import itemgetter
 import json, logging, time, threading, warnings
-import queue
+
+try:
+    import queue
+except ImportError:
+    import Queue as queue
+
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 import boto3
 import boto3.session
@@ -99,7 +108,7 @@ class CloudWatchLogHandler(handler_base_class):
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
                  create_log_stream=True, json_serialize_default=None, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
         self.use_queues = use_queues
