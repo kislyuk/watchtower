@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-import os
 from setuptools import setup, find_packages
-
-tests_require = [line.rstrip() for line in open(os.path.join(os.path.dirname(__file__), "test-requirements.txt"))]
 
 setup(
     name="watchtower",
@@ -14,9 +11,13 @@ setup(
     author_email="kislyuk@gmail.com",
     description="Python CloudWatch Logging",
     long_description=open("README.rst").read(),
-    install_requires=["boto3>=1.3.0"],
-    tests_require=tests_require,
-    extras_require={'test': tests_require},
+    install_requires=[
+        "boto3 >= 1.9.253, < 2",
+    ],
+    tests_require=[
+        "pyyaml >= 5.3.1, < 6",
+        "flake8 >= 3.7.9, < 4"
+    ],
     packages=find_packages(exclude=["test"]),
     platforms=["MacOS X", "Posix"],
     include_package_data=True,
