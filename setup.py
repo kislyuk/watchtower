@@ -3,7 +3,6 @@
 import os
 from setuptools import setup, find_packages
 
-install_requires = [line.rstrip() for line in open(os.path.join(os.path.dirname(__file__), "requirements.txt"))]
 tests_require = [line.rstrip() for line in open(os.path.join(os.path.dirname(__file__), "test-requirements.txt"))]
 
 setup(
@@ -15,7 +14,7 @@ setup(
     author_email="kislyuk@gmail.com",
     description="Python CloudWatch Logging",
     long_description=open("README.rst").read(),
-    install_requires=install_requires,
+    install_requires=["boto3>=1.3.0"],
     tests_require=tests_require,
     extras_require={'test': tests_require},
     packages=find_packages(exclude=["test"]),
