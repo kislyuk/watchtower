@@ -20,5 +20,4 @@ matrix:
   allow_failures:
     - python: pypy3
 
-sudo: false
 cache: pip
