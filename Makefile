@@ -1,13 +1,13 @@
 SHELL=/bin/bash
 
 test_deps:
-	pip install coverage flake8 wheel pyyaml mock boto3
+	pip install .[test]
 
 lint: test_deps
 	./setup.py flake8
 
 test: test_deps lint
-	coverage run --source=watchtower ./test/test.py
+	coverage run --source=$$(python setup.py --name) -m unittest discover --start-directory test --top-level-directory . --verbose
 
 init_docs:
 	cd docs; sphinx-quickstart
