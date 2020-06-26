@@ -116,7 +116,7 @@ under the stream name ``MyStreamName``. Instead of setting credentials via ``AWS
 you can also assign an IAM role to your instance and omit those parameters, prompting boto3 to ingest credentials from
 instance metadata.
 
-(See also the [Django logging documentation](https://docs.djangoproject.com/en/dev/topics/logging/)).
+(See also the `Django logging documentation <https://docs.djangoproject.com/en/dev/topics/logging/>`__).
 
 Examples: Querying CloudWatch logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
