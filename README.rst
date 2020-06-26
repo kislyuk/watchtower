@@ -82,12 +82,12 @@ This is an example of Watchtower integration with Django. In your Django project
         },
         'formatters': {
             'simple': {
-                'format': "%(asctime)s [%(levelname)-8s] %(message)s",
+                'format': u"%(asctime)s [%(levelname)-8s] %(message)s",
                 'datefmt': "%Y-%m-%d %H:%M:%S"
             },
             'aws': {
                 # you can add specific format for aws here
-                'format': "%(asctime)s [%(levelname)-8s] %(message)s",
+                'format': u"%(asctime)s [%(levelname)-8s] %(message)s",
                 'datefmt': "%Y-%m-%d %H:%M:%S"
             },
         },
