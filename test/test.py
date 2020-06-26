@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-# coding: utf-8
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import collections
 import copy
 from datetime import datetime
 
-import mock
+from unittest import mock
 import logging
 import logging.config
 import os
@@ -27,14 +25,12 @@ import yaml
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
 from watchtower import CloudWatchLogHandler, _idempotent_create
 
-USING_PYTHON2 = True if sys.version_info < (3, 0) else False
-
 
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
         self.test_path = os.path.dirname(__file__)
-        self.log_config_yaml_basic = '{0}/logging.yml'.format(self.test_path)
-        self.log_config_yaml_profile = '{0}/logging_profile.yml'.format(self.test_path)
+        self.log_config_yaml_basic = '{}/logging.yml'.format(self.test_path)
+        self.log_config_yaml_profile = '{}/logging_profile.yml'.format(self.test_path)
 
     @staticmethod
     def _make_dict_config(**handler_props):
@@ -101,7 +97,7 @@ class TestPyCWL(unittest.TestCase):
         pass
 
     def test_logconfig_dictconfig_basic(self):
-        with open(self.log_config_yaml_basic, 'r') as yaml_input:
+        with open(self.log_config_yaml_basic) as yaml_input:
             config_yml = yaml_input.read()
             config_dict = yaml.load(config_yml, Loader=yaml.SafeLoader)
             logging.config.dictConfig(config_dict)
@@ -118,17 +114,17 @@ class TestPyCWL(unittest.TestCase):
         with open(aws_config.name, 'w') as boto3_config_file:
             boto3_config_file.write('[profile watchtowerlogger]\n')
             boto3_config_file.write(
-                'aws_access_key_id={0}\n'.format(
+                'aws_access_key_id={}\n'.format(
                     boto3.Session().get_credentials().access_key
                 )
             )
             boto3_config_file.write(
-                'aws_secret_access_key={0}\n'.format(
+                'aws_secret_access_key={}\n'.format(
                     boto3.Session().get_credentials().secret_key
                 )
             )
             boto3_config_file.write(
-                'region={0}\n'.format(
+                'region={}\n'.format(
                     boto3.Session().region_name
                 )
             )
@@ -140,7 +136,7 @@ class TestPyCWL(unittest.TestCase):
         with mock.patch('botocore.configloader.load_config') as boto_config:
             boto_config.return_value = config_data
 
-            with open(self.log_config_yaml_profile, 'r') as yaml_input:
+            with open(self.log_config_yaml_profile) as yaml_input:
                 config_yml = yaml_input.read()
                 config_dict = yaml.load(config_yml, Loader=yaml.SafeLoader)
                 logging.config.dictConfig(config_dict)
@@ -152,7 +148,7 @@ class TestPyCWL(unittest.TestCase):
     def test_terminating_process(self):
         cwd = os.path.dirname(__file__)
         proc = subprocess.Popen(['python', 'run_logging.py'], cwd=cwd)
-        proc.wait() if USING_PYTHON2 else proc.wait(10)
+        proc.wait(10)
 
     def test_empty_message(self):
         handler = CloudWatchLogHandler(use_queues=False)
