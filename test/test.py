@@ -25,7 +25,7 @@ import botocore.configloader
 import yaml
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
-from watchtower import CloudWatchLogHandler
+from watchtower import CloudWatchLogHandler, _idempotent_create
 
 USING_PYTHON2 = True if sys.version_info < (3, 0) else False
 
@@ -170,9 +170,9 @@ class TestPyCWL(unittest.TestCase):
         )
         logging.config.dictConfig(config_dict)
         logger = logging.getLogger("root")
-        cw = boto3.client("logs")
+        logs = boto3.client("logs")
         self.addCleanup(
-            cw.delete_log_stream,
+            logs.delete_log_stream,
             logGroupName=log_group,
             logStreamName=log_stream,
         )
@@ -181,10 +181,10 @@ class TestPyCWL(unittest.TestCase):
         logger.error("foo")
 
         # Wait until message appears in log stream.
-        cw = boto3.client("logs")
+        logs = boto3.client("logs")
         retries = 10
         while True:
-            response = cw.get_log_events(
+            response = logs.get_log_events(
                 logGroupName=log_group,
                 logStreamName=log_stream,
             )
@@ -205,7 +205,7 @@ class TestPyCWL(unittest.TestCase):
     def test_existing_log_stream_does_not_create_log_stream(self):
         log_group = "py_watchtower_test"
         log_stream = "existing_stream"
-        cw = boto3.client("logs")
+        logs = boto3.client("logs")
         config_dict = self._make_dict_config(
             log_group=log_group,
             stream_name=log_stream,
@@ -213,9 +213,9 @@ class TestPyCWL(unittest.TestCase):
         )
         logging.config.dictConfig(config_dict)
         logger = logging.getLogger("root")
-        cw.create_log_stream(logGroupName=log_group, logStreamName=log_stream)
+        _idempotent_create(logs.create_log_stream, logGroupName=log_group, logStreamName=log_stream)
         self.addCleanup(
-            cw.delete_log_stream,
+            logs.delete_log_stream,
             logGroupName=log_group,
             logStreamName=log_stream,
         )
