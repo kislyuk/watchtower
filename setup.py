@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="watchtower",
-    version="0.7.3",
+    version="0.8.0",
     url="https://github.com/kislyuk/watchtower",
     license="Apache Software License",
     author="Andrey Kislyuk",

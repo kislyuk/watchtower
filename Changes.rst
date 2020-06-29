@@ -1,3 +1,10 @@
+Changes for v0.8.0 (2020-06-28)
+===============================
+
+-  Create log streams lazily (#97)
+
+-  Test and package infrastructure improvements
+
 Changes for v0.7.3 (2019-08-27)
 ===============================
 
