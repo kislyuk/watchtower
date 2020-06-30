@@ -95,9 +95,9 @@ This is an example of Watchtower integration with Django. In your Django project
             'watchtower': {
                 'level': 'DEBUG',
                 'class': 'watchtower.CloudWatchLogHandler',
-                         'boto3_session': boto3_session,
-                         'log_group': 'MyLogGroupName',
-                         'stream_name': 'MyStreamName',
+                'boto3_session': boto3_session,
+                'log_group': 'MyLogGroupName',
+                'stream_name': 'MyStreamName',
                 'formatter': 'aws',
             },
         },
