@@ -1,3 +1,8 @@
+UNRELEASED
+==========
+
+- Drop support for Python 2
+
 Changes for v0.8.0 (2020-06-28)
 ===============================
 
