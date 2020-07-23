@@ -20,6 +20,7 @@ import subprocess
 
 import boto3
 import botocore.configloader
+import structlog
 import yaml
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
@@ -140,6 +141,31 @@ class TestPyCWL(unittest.TestCase):
         logger = logging.getLogger("empty")
         logger.addHandler(handler)
         logger.critical("")
+
+    def test_serialize_dicts(self):
+        structlog.configure(
+            processors=[
+                structlog.stdlib.filter_by_level,
+                structlog.stdlib.add_logger_name,
+                structlog.stdlib.add_log_level,
+                structlog.stdlib.PositionalArgumentsFormatter(),
+                structlog.processors.TimeStamper(fmt="iso"),
+                structlog.processors.StackInfoRenderer(),
+                structlog.processors.format_exc_info,
+                structlog.processors.UnicodeDecoder(),
+                structlog.processors.JSONRenderer()
+            ],
+            context_class=dict,
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            wrapper_class=structlog.stdlib.BoundLogger,
+            cache_logger_on_first_use=True,
+        )
+        handler = CloudWatchLogHandler(serialize_dicts=False)
+        root_logger = logging.getLogger()
+        root_logger.addHandler(handler)
+        root_logger.setLevel(logging.INFO)
+        logger = structlog.get_logger("serialize_dicts")
+        logger.critical("msg", other_field="other value")
 
 
 if __name__ == "__main__":

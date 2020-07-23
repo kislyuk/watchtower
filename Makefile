@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 
 test_deps:
-	pip install coverage flake8 wheel pyyaml mock boto3
+	pip install coverage flake8 wheel pyyaml mock boto3 structlog
 
 lint: test_deps
 	./setup.py flake8
