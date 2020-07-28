@@ -87,6 +87,9 @@ class CloudWatchLogHandler(handler_base_class):
         https://docs.python.org/3/library/json.html#json.dump
         https://docs.python.org/2/library/json.html#json.dump
     :type json_serialize_default: Function
+    :param max_message_size:
+        Maximum size (in bytes) of a single message.
+    :type max_message_size: Integer
     """
     END = 1
     FLUSH = 2
@@ -107,7 +110,8 @@ class CloudWatchLogHandler(handler_base_class):
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
-                 create_log_stream=True, json_serialize_default=None, *args, **kwargs):
+                 create_log_stream=True, json_serialize_default=None, max_message_size=256 * 1024,
+                 *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -116,6 +120,7 @@ class CloudWatchLogHandler(handler_base_class):
         self.json_serialize_default = json_serialize_default or _json_serialize_default
         self.max_batch_size = max_batch_size
         self.max_batch_count = max_batch_count
+        self.max_message_size = max_message_size
         self.queues, self.sequence_tokens = {}, {}
         self.threads = []
         self.creating_log_stream, self.shutting_down = False, False
@@ -192,7 +197,7 @@ class CloudWatchLogHandler(handler_base_class):
                 self.queues[stream_name] = queue.Queue()
                 thread = threading.Thread(target=self.batch_sender,
                                           args=(self.queues[stream_name], stream_name, self.send_interval,
-                                                self.max_batch_size, self.max_batch_count))
+                                                self.max_batch_size, self.max_batch_count, self.max_message_size))
                 self.threads.append(thread)
                 thread.daemon = True
                 thread.start()
@@ -203,27 +208,28 @@ class CloudWatchLogHandler(handler_base_class):
         else:
             self._submit_batch([cwl_message], stream_name)
 
-    def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count):
+    def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count, max_message_size):
         msg = None
+        max_message_body_size = max_message_size - CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
 
         def size(_msg):
             return (len(_msg["message"]) if isinstance(_msg, dict) else 1) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
 
         def truncate(_msg2):
             warnings.warn("Log message size exceeds CWL max payload size, truncated", WatchtowerWarning)
-            _msg2["message"] = _msg2["message"][:max_batch_size - CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE]
+            _msg2["message"] = _msg2["message"][:max_message_body_size]
             return _msg2
 
         # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
         while msg != self.END:
             cur_batch = [] if msg is None or msg == self.FLUSH else [msg]
-            cur_batch_size = sum(size(msg) for msg in cur_batch)
+            cur_batch_size = sum(map(size, cur_batch))
             cur_batch_msg_count = len(cur_batch)
             cur_batch_deadline = time.time() + send_interval
             while True:
                 try:
                     msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline - time.time()))
-                    if size(msg) > max_batch_size:
+                    if size(msg) > max_message_body_size:
                         msg = truncate(msg)
                 except queue.Empty:
                     # If the queue is empty, we don't want to reprocess the previous message
