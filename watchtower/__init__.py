@@ -87,6 +87,11 @@ class CloudWatchLogHandler(handler_base_class):
         https://docs.python.org/3/library/json.html#json.dump
         https://docs.python.org/2/library/json.html#json.dump
     :type json_serialize_default: Function
+    :param endpoint_url:
+        The complete URL to use for the constructed client. Normally, botocore will automatically construct
+        the appropriate URL to use when communicating with a service. You can specify a complete URL
+        (including the "http/https" scheme) to override this behavior.
+    :type endpoint_url: String
     """
     END = 1
     FLUSH = 2
@@ -107,7 +112,7 @@ class CloudWatchLogHandler(handler_base_class):
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
-                 create_log_stream=True, json_serialize_default=None, *args, **kwargs):
+                 create_log_stream=True, json_serialize_default=None, endpoint_url=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -124,7 +129,7 @@ class CloudWatchLogHandler(handler_base_class):
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
-        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs")
+        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url)
         if create_log_group:
             _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
 
