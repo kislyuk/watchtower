@@ -156,6 +156,8 @@ that relies on the default configuration provided by ``boto3``:
     version: 1
     formatters:
         json:
+            (): watchtower.CloudWatchJSONFormatter
+            fields: [msg, levelname]
             format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
         plaintext:
             format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
