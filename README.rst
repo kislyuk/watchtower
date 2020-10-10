@@ -149,6 +149,8 @@ configuration provided by ``boto3``:
     disable_existing_loggers: False
     formatters:
       json:
+        (): watchtower.CloudWatchJSONFormatter
+        fields: [msg, levelname]
         format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
       plaintext:
         format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
