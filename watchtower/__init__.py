@@ -40,6 +40,65 @@ class WatchtowerWarning(UserWarning):
     pass
 
 
+class CloudWatchFormatter(logging.Formatter):
+    """
+    Log formatter for CloudWatch message. Transforms the logged record message into a compatible message for CloudWatch.
+    This is the default formatter for CloudWatchLogHandler
+
+    :param json_serialize_default:
+        The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
+        documentation on 'json' for more explanation about the 'default' parameter.
+        https://docs.python.org/3/library/json.html#json.dump
+        https://docs.python.org/2/library/json.html#json.dump
+    :type json_serialize_default: Function
+    """
+
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True, json_serialize_default=None):
+        super(CloudWatchFormatter, self).__init__(fmt=fmt, datefmt=datefmt, style=style, validate=validate)
+
+        self.json_serialize_default = json_serialize_default or _json_serialize_default
+
+    def format(self, message):
+        if isinstance(message.msg, Mapping):
+            message.msg = json.dumps(message.msg, default=self.json_serialize_default)
+
+        return super(CloudWatchFormatter, self).format(message)
+
+
+class CloudWatchJSONFormatter(logging.Formatter):
+    """
+    JSON log formatter for CloudWatch. Transforms the logged record message into a JSON formatted message.
+
+    :param json_serialize_default:
+        The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
+        documentation on 'json' for more explanation about the 'default' parameter.
+        https://docs.python.org/3/library/json.html#json.dump
+        https://docs.python.org/2/library/json.html#json.dump
+    :type json_serialize_default: Function
+
+    :param fields: A list of fields of the record to include in the CloudWatch Log json object. Defaults to '__all__'.
+    :type fields: list
+    """
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True, fields='__all__', json_serialize_default=None):
+        super(CloudWatchJSONFormatter, self).__init__(fmt=fmt, datefmt=datefmt, style=style, validate=validate)
+
+        self.fields = fields
+        self.json_serialize_default = json_serialize_default or _json_serialize_default
+
+    def format_json(self, message):
+        if self.fields == '__all__':
+            return dict(message)
+        return dict((k, v) for k, v in message.items() if k in self.fields)
+
+    def format(self, message):
+        message.msg = json.dumps(self.format_json(message.__dict__), default=self.json_serialize_default)
+
+        return super(CloudWatchJSONFormatter, self).format(message)
+
+
+_defaultFormatter = CloudWatchFormatter()
+
+
 class CloudWatchLogHandler(handler_base_class):
     """
     Create a new CloudWatch log handler object. This is the main entry point to the functionality of the module. See
@@ -81,12 +140,6 @@ class CloudWatchLogHandler(handler_base_class):
     :param create_log_stream:
         Create CloudWatch Logs log stream if it does not exist.  **True** by default.
     :type create_log_stream: Boolean
-    :param json_serialize_default:
-        The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
-        documentation on 'json' for more explanation about the 'default' parameter.
-        https://docs.python.org/3/library/json.html#json.dump
-        https://docs.python.org/2/library/json.html#json.dump
-    :type json_serialize_default: Function
     :param max_message_size:
         Maximum size (in bytes) of a single message.
     :type max_message_size: Integer
@@ -115,14 +168,13 @@ class CloudWatchLogHandler(handler_base_class):
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
-                 create_log_stream=True, json_serialize_default=None, max_message_size=256 * 1024,
-                 endpoint_url=None, *args, **kwargs):
+                 create_log_stream=True, max_message_size=256 * 1024,
+                 endpoint_url=None, formatter=None, *args, **kwargs):
         handler_base_class.__init__(self, *args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
         self.use_queues = use_queues
         self.send_interval = send_interval
-        self.json_serialize_default = json_serialize_default or _json_serialize_default
         self.max_batch_size = max_batch_size
         self.max_batch_count = max_batch_count
         self.max_message_size = max_message_size
@@ -131,6 +183,7 @@ class CloudWatchLogHandler(handler_base_class):
         self.creating_log_stream, self.shutting_down = False, False
         self.create_log_stream = create_log_stream
         self.log_group_retention_days = log_group_retention_days
+        self.formatter = formatter or _defaultFormatter
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
@@ -191,9 +244,6 @@ class CloudWatchLogHandler(handler_base_class):
             stream_name = stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
         if stream_name not in self.sequence_tokens:
             self.sequence_tokens[stream_name] = None
-
-        if isinstance(message.msg, Mapping):
-            message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
         cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
 
