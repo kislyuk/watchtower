@@ -62,8 +62,8 @@ class CloudWatchFormatter(logging.Formatter):
     :type json_serialize_default: Function
     """
 
-    def __init__(self, fmt=None, datefmt=None, style='%', validate=True, json_serialize_default=None):
-        super().__init__(fmt=fmt, datefmt=datefmt, style=style, validate=validate)
+    def __init__(self, fmt=None, datefmt=None, json_serialize_default=None, **kwargs):
+        super().__init__(fmt=fmt, datefmt=datefmt, **kwargs)
 
         self.json_serialize_default = json_serialize_default or _json_serialize_default
 
@@ -88,8 +88,8 @@ class CloudWatchJSONFormatter(logging.Formatter):
     :param fields: A list of fields of the record to include in the CloudWatch Log json object. Defaults to '__all__'.
     :type fields: list
     """
-    def __init__(self, fmt=None, datefmt=None, style='%', validate=True, fields='__all__', json_serialize_default=None):
-        super().__init__(fmt=fmt, datefmt=datefmt, style=style, validate=validate)
+    def __init__(self, fmt=None, datefmt=None, fields='__all__', json_serialize_default=None, **kwargs):
+        super().__init__(fmt=fmt, datefmt=datefmt, **kwargs)
 
         self.fields = fields
         self.json_serialize_default = json_serialize_default or _json_serialize_default
