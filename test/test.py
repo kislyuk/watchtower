@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import collections
-import copy
 from datetime import datetime
 
 from unittest import mock
@@ -9,7 +7,6 @@ import logging
 import logging.config
 import os
 import os.path
-import re
 import sys
 import tempfile
 import time
@@ -21,9 +18,9 @@ import boto3
 import botocore.configloader
 import yaml
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from watchtower import CloudWatchLogHandler, WatchtowerWarning, _idempotent_create
+from watchtower import CloudWatchLogHandler, WatchtowerWarning, _idempotent_create  # noqa: E402
 
 
 class TestPyCWL(unittest.TestCase):

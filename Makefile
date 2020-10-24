@@ -4,7 +4,7 @@ test_deps:
 	pip install coverage flake8 wheel pyyaml boto3
 
 lint: test_deps
-	./setup.py flake8
+	flake8
 
 test: test_deps lint
 	coverage run --source=watchtower ./test/test.py
