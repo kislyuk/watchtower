@@ -1,4 +1,3 @@
-# coding: utf-8
 import boto3
 from django.conf import settings
 from watchtower import CloudWatchLogHandler
@@ -29,4 +28,4 @@ class DjangoCloudWatchLogHandler(CloudWatchLogHandler):
 
         kwargs['boto3_session'] = boto3.session.Session(**client_kwargs)
 
-        super(DjangoCloudWatchLogHandler, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
