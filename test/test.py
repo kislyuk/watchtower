@@ -146,8 +146,7 @@ class TestPyCWL(unittest.TestCase):
 
     def test_terminating_process(self):
         cwd = os.path.dirname(__file__)
-        proc = subprocess.Popen(['python', 'run_logging.py'], cwd=cwd)
-        proc.wait(10)
+        subprocess.run(['python', 'run_logging.py'], cwd=cwd, timeout=10, check=True)
 
     def test_empty_message(self):
         handler = CloudWatchLogHandler(use_queues=False)
