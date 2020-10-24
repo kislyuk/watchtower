@@ -22,7 +22,7 @@ import botocore.configloader
 import yaml
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
-from watchtower import CloudWatchLogHandler, _idempotent_create
+from watchtower import CloudWatchLogHandler, WatchtowerWarning, _idempotent_create
 
 
 class TestPyCWL(unittest.TestCase):
@@ -75,7 +75,12 @@ class TestPyCWL(unittest.TestCase):
         handler.flush()
         logger.critical("msg")
         handler.close()
-        logger.critical("msg")
+        with self.assertWarns(WatchtowerWarning) as cm:
+            logger.critical("msg")
+        self.assertEqual(
+            str(cm.warning),
+            "Received message after logging system shutdown",
+        )
 
     def test_json_logging(self):
         handler = CloudWatchLogHandler()
@@ -153,7 +158,13 @@ class TestPyCWL(unittest.TestCase):
         handler = CloudWatchLogHandler(use_queues=False)
         logger = logging.getLogger("empty")
         logger.addHandler(handler)
-        logger.critical("")
+        with self.assertWarns(WatchtowerWarning) as cm:
+            logger.critical("")
+        self.assertEqual(
+            str(cm.warning),
+            "Failed to deliver logs: Parameter validation failed:\n"
+            "Invalid length for parameter logEvents[0].message, value: 0, valid range: 1-inf",
+        )
 
     def test_create_log_stream_on_emit(self):
         log_group = "py_watchtower_test"
