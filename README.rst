@@ -15,9 +15,10 @@ message, while guaranteeing a delivery deadline (60 seconds by default).
 
 Installation
 ~~~~~~~~~~~~
-::
 
-    pip install watchtower
+.. code-block:: console
+
+    $ pip install watchtower
 
 Synopsis
 ~~~~~~~~
@@ -123,10 +124,12 @@ Examples: Querying CloudWatch logs
 This section is not specific to Watchtower. It demonstrates the use of awscli and jq to read and search CloudWatch logs
 on the command line.
 
-For the Flask example above, you can retrieve your application logs with the following two commands::
+For the Flask example above, you can retrieve your application logs with the following two commands:
 
-    aws logs get-log-events --log-group-name watchtower --log-stream-name loggable | jq '.events[].message'
-    aws logs get-log-events --log-group-name watchtower --log-stream-name werkzeug | jq '.events[].message'
+.. code-block:: console
+
+    $ aws logs get-log-events --log-group-name watchtower --log-stream-name loggable | jq '.events[].message'
+    $ aws logs get-log-events --log-group-name watchtower --log-stream-name werkzeug | jq '.events[].message'
 
 CloudWatch Logs supports alerting and dashboards based on `metric filters
 <http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/FilterAndPatternSyntax.html>`_, which are pattern
