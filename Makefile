@@ -9,11 +9,8 @@ lint: test_deps
 test: test_deps lint
 	coverage run --source=watchtower ./test/test.py
 
-init_docs:
-	cd docs; sphinx-quickstart
-
 docs:
-	$(MAKE) -C docs html
+	sphinx-build docs docs/html
 
 install: clean
 	pip install wheel
