@@ -16,6 +16,7 @@ docs:
 	$(MAKE) -C docs html
 
 install: clean
+	pip install wheel
 	python ./setup.py bdist_wheel
 	pip install --upgrade dist/*.whl
 
