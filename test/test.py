@@ -22,6 +22,7 @@ import botocore.configloader
 import yaml
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  # noqa
+
 from watchtower import CloudWatchLogHandler, WatchtowerWarning, _idempotent_create
 
 
@@ -54,7 +55,7 @@ class TestPyCWL(unittest.TestCase):
         for i in range(5):
             logger = logging.getLogger("logger{}".format(i))
             logger.addHandler(h)
-            #logger.addHandler(CloudWatchLogHandler(use_queues=False))
+            # logger.addHandler(CloudWatchLogHandler(use_queues=False))
             loggers.append(logger)
         for i in range(10001):
             for logger in loggers:
@@ -97,7 +98,8 @@ class TestPyCWL(unittest.TestCase):
             logger.critical(dict(src="foo", event=str(i), stack=[1, 2, 3, i], details=dict(time=datetime(2019, 1, 1))))
 
     def test_multiple_handlers(self):
-        # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit. This can probably be fixed with thread locals.
+        # FIXME: multiple active CloudWatchLogHandlers cause daemon thread crashes at exit.
+        # This can probably be fixed with thread locals.
         pass
 
     def test_logconfig_dictconfig_basic(self):
@@ -109,6 +111,7 @@ class TestPyCWL(unittest.TestCase):
             for i in range(10):
                 logger.critical(dict(src="foo2", event=str(i), stack=[1, 2, 3, i], details={}))
 
+    @unittest.skipIf(sys.version_info < (3, 6), "")
     def test_logconfig_dictconfig_profile(self):
         # NOTE: The below is a bit of a hack to get around how Travis CI works so that it
         #   can be fully tested remotely too.
