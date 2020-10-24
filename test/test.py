@@ -146,7 +146,7 @@ class TestPyCWL(unittest.TestCase):
 
     def test_terminating_process(self):
         cwd = os.path.dirname(__file__)
-        proc = subprocess.Popen(['python', 'run_logging.py'], cwd=cwd)
+        proc = subprocess.Popen([sys.executable, 'run_logging.py'], cwd=cwd)
         proc.wait(10)
 
     def test_empty_message(self):
