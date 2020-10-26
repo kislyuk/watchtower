@@ -169,6 +169,8 @@ class CloudWatchLogHandler(logging.Handler):
         # response can be None only when all retries have been exhausted
         if response is None or "rejectedLogEventsInfo" in response:
             warnings.warn("Failed to deliver logs: {}".format(response), WatchtowerWarning)
+        else:
+            self.sequence_tokens[stream_name] = response["nextSequenceToken"]
 
     def emit(self, message):
         if self.creating_log_stream:
