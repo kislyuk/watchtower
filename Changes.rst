@@ -1,3 +1,16 @@
+Changes for v1.0.0 (2020-10-28)
+===============================
+
+-  Fix sequence token cache (#116)
+
+-  Drop compatibility for Python 2 (#109)
+
+-  Fix message truncation for messages above AWS limit (#112)
+
+-  Allow custom endpoint url (#114)
+
+-  Package API is stable
+
 Changes for v0.8.0 (2020-06-28)
 ===============================
 
