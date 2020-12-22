@@ -1,3 +1,8 @@
+Changes for v1.0.1 (2020-12-21)
+===============================
+
+-  Add fix/tests for log stream re-creation regression (#131)
+
 Changes for v1.0.0 (2020-10-28)
 ===============================
 
