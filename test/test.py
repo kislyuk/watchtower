@@ -79,8 +79,7 @@ class TestPyCWL(unittest.TestCase):
             retries -= 1
             time.sleep(0.5)
         else:
-            self.fail(f"Couldn't find message: {message} in log "
-                      f"stream: {log_stream}")
+            self.fail("Couldn't find message: {} in log stream: {}".format(message, log_stream))
 
     def test_basic_pycwl_statements(self):
         h = CloudWatchLogHandler()
@@ -241,7 +240,7 @@ class TestPyCWL(unittest.TestCase):
 
     def test_existing_log_stream_does_not_create_log_stream(self):
         log_group = "py_watchtower_test"
-        log_stream = "existing_stream"
+        log_stream = "existing_" + str(uuid.uuid4())
         logs = boto3.client("logs")
         config_dict = self._make_dict_config(
             log_group=log_group,
