@@ -46,6 +46,42 @@ class TestPyCWL(unittest.TestCase):
             },
         }
 
+    def _wait_for_log_stream_to_delete(self, log_group, log_stream):
+        logs = boto3.client("logs")
+        retries = 10
+        while retries:
+            response = logs.describe_log_streams(
+                logGroupName=log_group,
+                logStreamNamePrefix=log_stream,
+            )
+            log_streams = response["logStreams"]
+            if log_streams:
+                retries -= 1
+                time.sleep(0.5)
+            else:
+                break
+
+        log_streams = [log_streams for stream in log_streams]
+        self.assertNotIn(log_stream, log_streams)
+
+    def _wait_for_message(self, message, log_group, log_stream, retries=10):
+        logs = boto3.client("logs")
+        while retries:
+            response = logs.get_log_events(
+                logGroupName=log_group,
+                logStreamName=log_stream,
+            )
+            events = response["events"]
+            if events:
+                messages = [event["message"] for event in events]
+                if message in messages:
+                    return
+            retries -= 1
+            time.sleep(0.5)
+        else:
+            self.fail(f"Couldn't find message: {message} in log "
+                      f"stream: {log_stream}")
+
     def test_basic_pycwl_statements(self):
         h = CloudWatchLogHandler()
         loggers = []
@@ -183,29 +219,25 @@ class TestPyCWL(unittest.TestCase):
         )
 
         # Log stream does not exist at this point, emitting a record creates it.
-        logger.error("foo")
-
-        # Wait until message appears in log stream.
-        logs = boto3.client("logs")
-        retries = 10
-        while True:
-            response = logs.get_log_events(
-                logGroupName=log_group,
-                logStreamName=log_stream,
-            )
-            events = response["events"]
-            if not events:
-                retries -= 1
-                time.sleep(0.5)
-            else:
-                break
-
-        [event] = events
-        self.assertEqual(event["message"], "foo")
+        create_msg = "foo"
+        logger.error(create_msg)
+        self._wait_for_message(create_msg, log_group, log_stream)
 
         with mock.patch("watchtower._idempotent_create") as create_log_stream_mock:
+            # Write another message, create stream should not be called here
             logger.error("another")
         create_log_stream_mock.assert_not_called()
+
+        # Delete the log stream, the next write should re-create it
+        logs.delete_log_stream(logGroupName=log_group,
+                               logStreamName=log_stream)
+        self._wait_for_log_stream_to_delete(log_group, log_stream)
+
+        # log and wait for new message to the log stream
+        second_create_msg = "This msg should re-create the log stream"
+        logger.error(second_create_msg)
+        self._wait_for_message(second_create_msg, log_group,
+                               log_stream, retries=15)
 
     def test_existing_log_stream_does_not_create_log_stream(self):
         log_group = "py_watchtower_test"
