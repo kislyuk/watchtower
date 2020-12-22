@@ -151,7 +151,13 @@ class CloudWatchLogHandler(logging.Handler):
             except ClientError as e:
                 if e.response.get("Error", {}).get("Code") in ("DataAlreadyAcceptedException",
                                                                "InvalidSequenceTokenException"):
-                    kwargs["sequenceToken"] = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
+                    next_expected_token = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
+                    # null as the next sequenceToken means don't include any
+                    # sequenceToken at all, not that the token should be set to "null"
+                    if next_expected_token == "null":
+                        kwargs.pop("sequenceToken", None)
+                    else:
+                        kwargs["sequenceToken"] = next_expected_token
                 elif e.response["Error"]["Code"] == "ResourceNotFoundException":
                     if self.create_log_stream:
                         self.creating_log_stream = True
@@ -159,6 +165,12 @@ class CloudWatchLogHandler(logging.Handler):
                             _idempotent_create(self.cwl_client.create_log_stream,
                                                logGroupName=self.log_group,
                                                logStreamName=stream_name)
+                            # We now have a new stream name and the next retry
+                            # will be the first attempt to log to it, so we
+                            # should not continue to use the old sequence token
+                            # at this point, the first write to the new stream
+                            # should not contain a sequence token at all.
+                            kwargs.pop("sequenceToken", None)
                         finally:
                             self.creating_log_stream = False
                 else:
