@@ -29,6 +29,16 @@ class WatchtowerWarning(UserWarning):
     pass
 
 
+def boto_filter(record):
+    # Filter log messages from botocore and its dependency, urllib3.
+    # This is required to avoid an infinite loop when shutting down.
+    if record.name.startswith("botocore"):
+        return False
+    if record.name.startswith("urllib3"):
+        return False
+    return True
+
+
 class CloudWatchLogHandler(logging.Handler):
     """
     Create a new CloudWatch log handler object. This is the main entry point to the functionality of the module. See
@@ -259,20 +269,8 @@ class CloudWatchLogHandler(logging.Handler):
                     cur_batch.append(msg)
                     my_queue.task_done()
 
-    def force_botocore_logging_level(self, force_level=logging.INFO, action="close"):
-        for name in logging.root.manager.loggerDict:
-            if name.startswith("botocore") or name.startswith("urllib3"):
-                logger = logging.getLogger(name)
-                level = logger.getEffectiveLevel()
-                if level < force_level:
-                    warnings.warn("Logger {} has level {}. Watchtower cannot safely shut down while the logger is at "
-                                  "this level. Please set the level for this logger to {} or above. Now trying to set "
-                                  "the level to this value and {}.".format(logger, logging.getLevelName(level),
-                                                                           logging.getLevelName(force_level), action))
-                    logger.setLevel(force_level)
-
     def flush(self):
-        self.force_botocore_logging_level(action="flush")
+        self.addFilter(boto_filter)
         if self.shutting_down:
             return
         for q in self.queues.values():
@@ -281,7 +279,7 @@ class CloudWatchLogHandler(logging.Handler):
             q.join()
 
     def close(self):
-        self.force_botocore_logging_level()
+        self.addFilter(boto_filter)
         # Avoid waiting on the queue again when the close called twice.
         # Otherwise the second call, as no thread is running, it will hang
         # forever
