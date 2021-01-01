@@ -1,3 +1,8 @@
+Changes for v1.0.3 (2021-01-01)
+===============================
+
+-  Apply filter to self instead of forcing log level on shutdown
+
 Changes for v1.0.2 (2020-12-31)
 ===============================
 
