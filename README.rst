@@ -220,12 +220,30 @@ Finally, the following shows how to load the configuration into the working appl
             logging.config.dictConfig(config_dict)
             app.run()
 
+Boto3/botocore/urllib3 logs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Because watchtower uses boto3 to send logs, the act of sending them generates a number of DEBUG level log messages
+from boto3's dependencies, botocore and urllib3. To avoid generating a self-perpetuating stream of log messages,
+``watchtower.CloudWatchLogHandler`` attaches a
+`filter <https://docs.python.org/3/library/logging.html#logging.Handler.addFilter>`_ to itself which drops all DEBUG
+level messages from these libraries, and drops all messages at all levels from them when shutting down (specifically,
+in ``watchtower.CloudWatchLogHandler.flush()`` and ``watchtower.CloudWatchLogHandler.close()``). The filter does not
+apply to any other handlers you may have processing your messages, so the following basic configuration will cause
+botocore debug logs to print to stderr but not to Cloudwatch:
+
+.. code-block:: python
+
+    import watchtower, logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger()
+    logger.addHandler(watchtower.CloudWatchLogHandler())
+
 Authors
--------
+~~~~~~~
 * Andrey Kislyuk
 
 Links
------
+~~~~~
 * `Project home page (GitHub) <https://github.com/kislyuk/watchtower>`_
 * `Documentation <https://kislyuk.github.io/watchtower/>`_
 * `Package distribution (PyPI) <https://pypi.python.org/pypi/watchtower>`_
@@ -237,7 +255,7 @@ Bugs
 Please report bugs, issues, feature requests, etc. on `GitHub <https://github.com/kislyuk/watchtower/issues>`_.
 
 License
--------
+~~~~~~~
 Licensed under the terms of the `Apache License, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0>`_.
 
 .. image:: https://github.com/kislyuk/watchtower/workflows/Python%20package/badge.svg

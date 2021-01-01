@@ -25,11 +25,7 @@ def _json_serialize_default(o):
         return o.isoformat()
 
 
-class WatchtowerWarning(UserWarning):
-    pass
-
-
-def boto_debug_filter(record):
+def _boto_debug_filter(record):
     # Filter debug log messages from botocore and its dependency, urllib3.
     # This is required to avoid message storms any time we send logs.
     if record.name.startswith("botocore") and record.levelname == "DEBUG":
@@ -39,7 +35,7 @@ def boto_debug_filter(record):
     return True
 
 
-def boto_filter(record):
+def _boto_filter(record):
     # Filter log messages from botocore and its dependency, urllib3.
     # This is required to avoid an infinite loop when shutting down.
     if record.name.startswith("botocore"):
@@ -47,6 +43,10 @@ def boto_filter(record):
     if record.name.startswith("urllib3"):
         return False
     return True
+
+
+class WatchtowerWarning(UserWarning):
+    pass
 
 
 class CloudWatchLogHandler(logging.Handler):
@@ -154,7 +154,7 @@ class CloudWatchLogHandler(logging.Handler):
                 retentionInDays=self.log_group_retention_days
             )
 
-        self.addFilter(boto_debug_filter)
+        self.addFilter(_boto_debug_filter)
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
@@ -282,7 +282,7 @@ class CloudWatchLogHandler(logging.Handler):
                     my_queue.task_done()
 
     def flush(self):
-        self.addFilter(boto_filter)
+        self.addFilter(_boto_filter)
         if self.shutting_down:
             return
         for q in self.queues.values():
@@ -291,7 +291,7 @@ class CloudWatchLogHandler(logging.Handler):
             q.join()
 
     def close(self):
-        self.addFilter(boto_filter)
+        self.addFilter(_boto_filter)
         # Avoid waiting on the queue again when the close called twice.
         # Otherwise the second call, as no thread is running, it will hang
         # forever
