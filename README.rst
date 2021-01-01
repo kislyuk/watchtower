@@ -130,11 +130,7 @@ For the Flask example above, you can retrieve your application logs with the fol
 
 CloudWatch Logs supports alerting and dashboards based on `metric filters
 <http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/FilterAndPatternSyntax.html>`_, which are pattern
-rules that extract information from your logs and feed it to alarms and dashboard graphs. The following example shows
-logging structured JSON data using Watchtower, setting up a metric filter to extract data from the log stream, a dashboard to
-visualize it, and an alarm that sends an email::
-
-    TODO
+rules that extract information from your logs and feed it to alarms and dashboard graphs.
 
 Examples: Python Logging Config
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
