@@ -1,3 +1,8 @@
+Changes for v1.0.2 (2020-12-31)
+===============================
+
+Force botocore logging level to be INFO or higher on shutdown
+
 Changes for v1.0.1 (2020-12-21)
 ===============================
 
