@@ -1,3 +1,8 @@
+Changes for v1.0.4 (2021-01-01)
+===============================
+
+-  Protect against message storms from sending botocore debug logs
+
 Changes for v1.0.3 (2021-01-01)
 ===============================
 
