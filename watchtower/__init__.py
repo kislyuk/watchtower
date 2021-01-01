@@ -38,7 +38,7 @@ class CloudWatchLogHandler(logging.Handler):
     :type log_group: String
     :param stream_name:
         Name of the CloudWatch log stream to write logs to. By default, the name of the logger that processed the
-        message is used. Accepts a format string parameter of {logger_name}, as well as {strftime:%m-%d-y}, where
+        message is used. Accepts a format string parameter of {logger_name}, as well as {strftime:%m-%d-%y}, where
         any strftime string can be used to include the current UTC datetime in the stream name.
     :type stream_name: String
     :param use_queues:
@@ -259,7 +259,20 @@ class CloudWatchLogHandler(logging.Handler):
                     cur_batch.append(msg)
                     my_queue.task_done()
 
+    def force_botocore_logging_level(self, force_level=logging.INFO, action="close"):
+        for name in logging.root.manager.loggerDict:
+            if name.startswith("botocore") or name.startswith("urllib3"):
+                logger = logging.getLogger(name)
+                level = logger.getEffectiveLevel()
+                if level < force_level:
+                    warnings.warn("Logger {} has level {}. Watchtower cannot safely shut down while the logger is at "
+                                  "this level. Please set the level for this logger to {} or above. Now trying to set "
+                                  "the level to this value and {}.".format(logger, logging.getLevelName(level),
+                                                                           logging.getLevelName(force_level), action))
+                    logger.setLevel(force_level)
+
     def flush(self):
+        self.force_botocore_logging_level(action="flush")
         if self.shutting_down:
             return
         for q in self.queues.values():
@@ -268,6 +281,7 @@ class CloudWatchLogHandler(logging.Handler):
             q.join()
 
     def close(self):
+        self.force_botocore_logging_level()
         # Avoid waiting on the queue again when the close called twice.
         # Otherwise the second call, as no thread is running, it will hang
         # forever
