@@ -29,6 +29,16 @@ class WatchtowerWarning(UserWarning):
     pass
 
 
+def boto_debug_filter(record):
+    # Filter debug log messages from botocore and its dependency, urllib3.
+    # This is required to avoid message storms any time we send logs.
+    if record.name.startswith("botocore") and record.levelname == "DEBUG":
+        return False
+    if record.name.startswith("urllib3") and record.levelname == "DEBUG":
+        return False
+    return True
+
+
 def boto_filter(record):
     # Filter log messages from botocore and its dependency, urllib3.
     # This is required to avoid an infinite loop when shutting down.
@@ -143,6 +153,8 @@ class CloudWatchLogHandler(logging.Handler):
                 logGroupName=self.log_group,
                 retentionInDays=self.log_group_retention_days
             )
+
+        self.addFilter(boto_debug_filter)
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
