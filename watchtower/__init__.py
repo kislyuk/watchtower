@@ -203,7 +203,9 @@ class CloudWatchLogHandler(logging.Handler):
         # response can be None only when all retries have been exhausted
         if response is None or "rejectedLogEventsInfo" in response:
             warnings.warn("Failed to deliver logs: {}".format(response), WatchtowerWarning)
-        else:
+        elif "nextSequenceToken" in response:
+            # According to https://github.com/kislyuk/watchtower/issues/134, nextSequenceToken may sometimes be absent
+            # from the response
             self.sequence_tokens[stream_name] = response["nextSequenceToken"]
 
     def emit(self, message):
@@ -282,6 +284,10 @@ class CloudWatchLogHandler(logging.Handler):
                     my_queue.task_done()
 
     def flush(self):
+        """
+        Send any queued messages to CloudWatch. This method does nothing if ``use_queues`` is set to False.
+        """
+        # fixme: don't add filter if it's already installed
         self.addFilter(_boto_filter)
         if self.shutting_down:
             return
@@ -291,6 +297,11 @@ class CloudWatchLogHandler(logging.Handler):
             q.join()
 
     def close(self):
+        """
+        Send any queued messages to CloudWatch and prevent further processing of messages.
+        This method does nothing if ``use_queues`` is set to False.
+        """
+        # fixme: don't add filter if it's already installed
         self.addFilter(_boto_filter)
         # Avoid waiting on the queue again when the close called twice.
         # Otherwise the second call, as no thread is running, it will hang
