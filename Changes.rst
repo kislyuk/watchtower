@@ -1,3 +1,8 @@
+Changes for v1.0.5 (2021-01-13)
+===============================
+
+-  Don’t crash if nextSequenceToken is missing. Fixes #134
+
 Changes for v1.0.4 (2021-01-01)
 ===============================
 
