@@ -249,7 +249,7 @@ class TestPyCWL(unittest.TestCase):
         )
         logging.config.dictConfig(config_dict)
         logger = logging.getLogger("root")
-        _idempotent_create(logs.create_log_stream, logGroupName=log_group, logStreamName=log_stream)
+        _idempotent_create(logs, "create_log_stream", logGroupName=log_group, logStreamName=log_stream)
         self.addCleanup(
             logs.delete_log_stream,
             logGroupName=log_group,
