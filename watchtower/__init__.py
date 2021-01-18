@@ -9,12 +9,12 @@ import boto3.session
 from botocore.exceptions import ClientError
 
 
-def _idempotent_create(_callable, *args, **kwargs):
+def _idempotent_create(client, method, *args, **kwargs):
+    method_callable = getattr(client, method)
     try:
-        _callable(*args, **kwargs)
-    except ClientError as e:
-        if e.response.get("Error", {}).get("Code") != "ResourceAlreadyExistsException":
-            raise
+        method_callable(*args, **kwargs)
+    except (client.exceptions.OperationAbortedException, client.exceptions.ResourceAlreadyExistsException):
+        pass
 
 
 def _json_serialize_default(o):
@@ -145,14 +145,13 @@ class CloudWatchLogHandler(logging.Handler):
         # This ensures that failing to create the session will not result in any missing attribtues.
         self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url)
         if create_log_group:
-            _idempotent_create(self.cwl_client.create_log_group, logGroupName=self.log_group)
+            _idempotent_create(self.cwl_client, "create_log_group", logGroupName=self.log_group)
 
         if log_group_retention_days:
-            _idempotent_create(
-                self.cwl_client.put_retention_policy,
-                logGroupName=self.log_group,
-                retentionInDays=self.log_group_retention_days
-            )
+            _idempotent_create(self.cwl_client,
+                               "put_retention_policy",
+                               logGroupName=self.log_group,
+                               retentionInDays=self.log_group_retention_days)
 
         self.addFilter(_boto_debug_filter)
 
@@ -171,8 +170,8 @@ class CloudWatchLogHandler(logging.Handler):
                 response = self.cwl_client.put_log_events(**kwargs)
                 break
             except ClientError as e:
-                if e.response.get("Error", {}).get("Code") in ("DataAlreadyAcceptedException",
-                                                               "InvalidSequenceTokenException"):
+                if isinstance(e, (self.cwl_client.exceptions.DataAlreadyAcceptedException,
+                                  self.cwl_client.exceptions.InvalidSequenceTokenException)):
                     next_expected_token = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
                     # null as the next sequenceToken means don't include any
                     # sequenceToken at all, not that the token should be set to "null"
@@ -180,11 +179,12 @@ class CloudWatchLogHandler(logging.Handler):
                         kwargs.pop("sequenceToken", None)
                     else:
                         kwargs["sequenceToken"] = next_expected_token
-                elif e.response["Error"]["Code"] == "ResourceNotFoundException":
+                elif isinstance(e, self.cwl_client.exceptions.ResourceNotFoundException):
                     if self.create_log_stream:
                         self.creating_log_stream = True
                         try:
-                            _idempotent_create(self.cwl_client.create_log_stream,
+                            _idempotent_create(self.cwl_client,
+                                               "create_log_stream",
                                                logGroupName=self.log_group,
                                                logStreamName=stream_name)
                             # We now have a new stream name and the next retry
