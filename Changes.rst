@@ -1,3 +1,8 @@
+Changes for v1.0.6 (2021-01-17)
+===============================
+
+-  Catch OperationAbortedException in \_idempotent_create. Fixes #136
+
 Changes for v1.0.5 (2021-01-13)
 ===============================
 
