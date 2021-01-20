@@ -6,6 +6,7 @@ lint: test_deps
 
 test: test_deps lint
 	coverage run --source=$$(python setup.py --name) ./test/test.py -v
+	mypy watchtower
 
 docs:
 	sphinx-build docs docs/html
