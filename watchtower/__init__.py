@@ -62,9 +62,8 @@ class CloudWatchFormatter(logging.Formatter):
     :type json_serialize_default: Function
     """
 
-    def __init__(self, fmt=None, datefmt=None, json_serialize_default=None, **kwargs):
-        super().__init__(fmt=fmt, datefmt=datefmt, **kwargs)
-
+    def __init__(self, *args, json_serialize_default=None, **kwargs):
+        super().__init__(*args, **kwargs)
         self.json_serialize_default = json_serialize_default or _json_serialize_default
 
     def format(self, message):
@@ -74,7 +73,7 @@ class CloudWatchFormatter(logging.Formatter):
         return super().format(message)
 
 
-class CloudWatchJSONFormatter(logging.Formatter):
+class CloudWatchJSONFormatter(CloudWatchFormatter):
     """
     JSON log formatter for CloudWatch. Transforms the logged record message into a JSON formatted message.
 
@@ -84,28 +83,23 @@ class CloudWatchJSONFormatter(logging.Formatter):
         https://docs.python.org/3/library/json.html#json.dump
         https://docs.python.org/2/library/json.html#json.dump
     :type json_serialize_default: Function
-
     :param fields: A list of fields of the record to include in the CloudWatch Log json object. Defaults to '__all__'.
     :type fields: list
     """
-    def __init__(self, fmt=None, datefmt=None, fields='__all__', json_serialize_default=None, **kwargs):
-        super().__init__(fmt=fmt, datefmt=datefmt, **kwargs)
-
+    def __init__(self, *args, fields='__all__', **kwargs):
+        super().__init__(*args, **kwargs)
         self.fields = fields
-        self.json_serialize_default = json_serialize_default or _json_serialize_default
-
-    def format_json(self, message):
-        if self.fields == '__all__':
-            return dict(message)
-        return dict((k, v) for k, v in message.items() if k in self.fields)
 
     def format(self, message):
-        message.msg = json.dumps(self.format_json(message.__dict__), default=self.json_serialize_default)
+        if self.fields == '__all__':
+            message.msg = dict(message.__dict__)
+        else:
+            message.msg = {k: v for k, v in message.items() if k in self.fields}
 
         return super().format(message)
 
 
-_defaultFormatter = CloudWatchFormatter()
+_default_formatter = CloudWatchFormatter()
 
 
 class CloudWatchLogHandler(logging.Handler):
@@ -149,6 +143,14 @@ class CloudWatchLogHandler(logging.Handler):
     :param create_log_stream:
         Create CloudWatch Logs log stream if it does not exist.  **True** by default.
     :type create_log_stream: Boolean
+    :param json_serialize_default:
+        **DEPRECATED**: use CloudWatchFormatter for JSON formatting instead.
+
+        The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
+        documentation on 'json' for more explanation about the 'default' parameter.
+        https://docs.python.org/3/library/json.html#json.dump
+        https://docs.python.org/2/library/json.html#json.dump
+    :type json_serialize_default: Function
     :param max_message_size:
         Maximum size (in bytes) of a single message.
     :type max_message_size: Integer
@@ -177,8 +179,8 @@ class CloudWatchLogHandler(logging.Handler):
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
-                 create_log_stream=True, max_message_size=256 * 1024,
-                 endpoint_url=None, formatter=None, *args, **kwargs):
+                 create_log_stream=True, json_serialize_default=None, max_message_size=256 * 1024,
+                 endpoint_url=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -192,7 +194,12 @@ class CloudWatchLogHandler(logging.Handler):
         self.creating_log_stream, self.shutting_down = False, False
         self.create_log_stream = create_log_stream
         self.log_group_retention_days = log_group_retention_days
-        self.formatter = formatter or _defaultFormatter
+        self.json_serialize_default = json_serialize_default
+        if json_serialize_default:
+            warnings.warn(
+                'Specifying json_serialize_default is deprecated, please create a CloudWatchFormatter instance '
+                'which accepts a json_serialize_default and set it as a formatter instead',
+                DeprecationWarning)
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
@@ -261,6 +268,19 @@ class CloudWatchLogHandler(logging.Handler):
             # from the response
             self.sequence_tokens[stream_name] = response["nextSequenceToken"]
 
+    def format(self, record):
+        """
+        Format the specified record.
+
+        If a formatter is set, use it. Otherwise, use the default formatter for the module. This differs from
+        `logging.Handler.format` as its default is `CloudWatchFormatter`.
+        """
+        if self.formatter:
+            fmt = self.formatter
+        else:
+            fmt = _default_formatter
+        return fmt.format(record)
+
     def emit(self, message):
         if self.creating_log_stream:
             return  # Avoid infinite recursion when asked to log a message as our own side effect
@@ -271,6 +291,9 @@ class CloudWatchLogHandler(logging.Handler):
             stream_name = stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
         if stream_name not in self.sequence_tokens:
             self.sequence_tokens[stream_name] = None
+
+        if self.json_serialize_default and isinstance(message.msg, Mapping):
+            message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
         cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
 
