@@ -143,7 +143,8 @@ class CloudWatchLogHandler(logging.Handler):
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
-        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url, config=config)
+        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url,
+                                                                                      config=config)
         if create_log_group:
             _idempotent_create(self.cwl_client, "create_log_group", logGroupName=self.log_group)
 
