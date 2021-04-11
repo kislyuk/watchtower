@@ -125,7 +125,7 @@ class CloudWatchLogHandler(logging.Handler):
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
                  create_log_stream=True, json_serialize_default=None, max_message_size=256 * 1024,
-                 endpoint_url=None, *args, **kwargs):
+                 endpoint_url=None, config=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -143,7 +143,7 @@ class CloudWatchLogHandler(logging.Handler):
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
-        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url)
+        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url, config=config)
         if create_log_group:
             _idempotent_create(self.cwl_client, "create_log_group", logGroupName=self.log_group)
 
