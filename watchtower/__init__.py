@@ -135,11 +135,9 @@ class CloudWatchLogHandler(logging.Handler):
         self.max_batch_size = max_batch_size
         self.max_batch_count = max_batch_count
         self.max_message_size = max_message_size
-        self.queues, self.sequence_tokens = {}, {}
-        self.threads = []
-        self.creating_log_stream, self.shutting_down = False, False
         self.create_log_stream = create_log_stream
         self.log_group_retention_days = log_group_retention_days
+        self._init_state()
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
@@ -154,6 +152,18 @@ class CloudWatchLogHandler(logging.Handler):
                                retentionInDays=self.log_group_retention_days)
 
         self.addFilter(_boto_debug_filter)
+
+    def _at_fork_reinit(self):
+        # This was added in Python 3.9 and should only be called with a recent
+        # version of Python. An older version will attempt to call createLock
+        # instead.
+        super()._at_fork_reinit()
+        self._init_state()
+
+    def _init_state(self):
+        self.queues, self.sequence_tokens = {}, {}
+        self.threads = []
+        self.creating_log_stream, self.shutting_down = False, False
 
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
@@ -207,6 +217,10 @@ class CloudWatchLogHandler(logging.Handler):
             # According to https://github.com/kislyuk/watchtower/issues/134, nextSequenceToken may sometimes be absent
             # from the response
             self.sequence_tokens[stream_name] = response["nextSequenceToken"]
+
+    def createLock(self):
+        super().createLock()
+        self._init_state()
 
     def emit(self, message):
         if self.creating_log_stream:
