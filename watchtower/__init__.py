@@ -165,6 +165,14 @@ class CloudWatchLogHandler(logging.Handler):
         self.threads = []
         self.creating_log_stream, self.shutting_down = False, False
 
+    def _get_stream_name(self, message):
+        stream_name = self.stream_name
+
+        if stream_name is None:
+            return message.name
+
+        return stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
+
     def _submit_batch(self, batch, stream_name, max_retries=5):
         if len(batch) < 1:
             return
@@ -225,11 +233,9 @@ class CloudWatchLogHandler(logging.Handler):
     def emit(self, message):
         if self.creating_log_stream:
             return  # Avoid infinite recursion when asked to log a message as our own side effect
-        stream_name = self.stream_name
-        if stream_name is None:
-            stream_name = message.name
-        else:
-            stream_name = stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
+
+        stream_name = self._get_stream_name(message)
+
         if stream_name not in self.sequence_tokens:
             self.sequence_tokens[stream_name] = None
 
