@@ -234,31 +234,34 @@ class CloudWatchLogHandler(logging.Handler):
         if self.creating_log_stream:
             return  # Avoid infinite recursion when asked to log a message as our own side effect
 
-        stream_name = self._get_stream_name(message)
+        try:
+            stream_name = self._get_stream_name(message)
 
-        if stream_name not in self.sequence_tokens:
-            self.sequence_tokens[stream_name] = None
+            if stream_name not in self.sequence_tokens:
+                self.sequence_tokens[stream_name] = None
 
-        if isinstance(message.msg, Mapping):
-            message.msg = json.dumps(message.msg, default=self.json_serialize_default)
+            if isinstance(message.msg, Mapping):
+                message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
-        cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
+            cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
 
-        if self.use_queues:
-            if stream_name not in self.queues:
-                self.queues[stream_name] = queue.Queue()
-                thread = threading.Thread(target=self.batch_sender,
-                                          args=(self.queues[stream_name], stream_name, self.send_interval,
-                                                self.max_batch_size, self.max_batch_count, self.max_message_size))
-                self.threads.append(thread)
-                thread.daemon = True
-                thread.start()
-            if self.shutting_down:
-                warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
+            if self.use_queues:
+                if stream_name not in self.queues:
+                    self.queues[stream_name] = queue.Queue()
+                    thread = threading.Thread(target=self.batch_sender,
+                                              args=(self.queues[stream_name], stream_name, self.send_interval,
+                                                    self.max_batch_size, self.max_batch_count, self.max_message_size))
+                    self.threads.append(thread)
+                    thread.daemon = True
+                    thread.start()
+                if self.shutting_down:
+                    warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
+                else:
+                    self.queues[stream_name].put(cwl_message)
             else:
-                self.queues[stream_name].put(cwl_message)
-        else:
-            self._submit_batch([cwl_message], stream_name)
+                self._submit_batch([cwl_message], stream_name)
+        except Exception:
+            self.handleError(message)
 
     def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count, max_message_size):
         msg = None
