@@ -81,6 +81,10 @@ class CloudWatchLogHandler(logging.Handler):
         Session object to create boto3 `logs` clients. Accepts AWS credential, profile_name, and region_name from its
         constructor.
     :type boto3_session: boto3.session.Session
+    :param boto3_cwl_client:
+        Boto3 client for CloudWatch Logs. If given, 'boto3_session' and 'boto3_profile_name' are rejected because they
+        are not needed. Similarly, 'endpoint_url' is rejected as it should be set on the client instance directly.
+    :type boto3_cwl_client: botocore.client.BaseClient
     :param create_log_group:
         Create CloudWatch Logs log group if it does not exist.  **True** by default.
     :type create_log_group: Boolean
@@ -123,9 +127,13 @@ class CloudWatchLogHandler(logging.Handler):
 
     def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
-                 boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
+                 boto3_profile_name=None, boto3_cwl_client=None, create_log_group=True, log_group_retention_days=None,
                  create_log_stream=True, json_serialize_default=None, max_message_size=256 * 1024,
                  endpoint_url=None, *args, **kwargs):
+        if boto3_cwl_client and (boto3_session or boto3_profile_name):
+            raise ValueError("'boto3_session' and 'boto3_profile_name' must not be given with 'boto3_cwl_client'!")
+        if boto3_cwl_client and endpoint_url:
+            raise ValueError("'endpoint_url' must not be given with 'boto3_cwl_client'!")
         super().__init__(*args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -141,7 +149,9 @@ class CloudWatchLogHandler(logging.Handler):
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
-        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url)
+        self.cwl_client = \
+            boto3_cwl_client or \
+            self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url)
         if create_log_group:
             _idempotent_create(self.cwl_client, "create_log_group", logGroupName=self.log_group)
 
