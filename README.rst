@@ -35,6 +35,20 @@ Install `awscli <https://pypi.python.org/pypi/awscli>`_ and set your AWS credent
 After running the example, you can see the log output in your `AWS console
 <https://console.aws.amazon.com/cloudwatch/home>`_.
 
+IAM permissions
+~~~~~~~~~~~~~~~
+The process running watchtower needs to have access to IAM credentials to call the CloudWatch Logs API. The process
+for loading and configuring credentials is described in the
+`Boto3 Credentials documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html>`_.
+When running Watchtower on an EC2 instance or other AWS compute resource, boto3 automatically loads credentials from
+`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>` or container
+credentials provider (AWS_WEB_IDENTITY_TOKEN_FILE or AWS_CONTAINER_CREDENTIALS_FULL_URI). The easiest way to grant the
+right permissions to the IAM role associated with these credentials is by attaching an AWS
+`managed IAM policy <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html>` to the
+role. While AWS provides no generic managed CloudWatch Logs writer policy, it is recommended that you use the
+`arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs` managed policy, which has just the right permissions without being
+overly broad.
+
 Example: Flask logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -112,9 +126,10 @@ This is an example of Watchtower integration with Django. In your Django project
     }
 
 Using this configuration, every log statement from Django will be sent to Cloudwatch in the log group ``MyLogGroupName``
-under the stream name ``MyStreamName``. Instead of setting credentials via ``AWS_ACCESS_KEY_ID`` and other variables,
-you can also assign an IAM role to your instance and omit those parameters, prompting boto3 to ingest credentials from
-instance metadata.
+under the stream name ``MyStreamName``. Instead of setting credentials via ``AWS_ACCESS_KEY_ID`` and other variables
+in ``settings.py``, it is recommended that you assign an IAM role to your instance, prompting boto3 to automatically
+ingest IAM role credentials from
+`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>`.
 
 (See also the `Django logging documentation <https://docs.djangoproject.com/en/dev/topics/logging/>`__).
 
