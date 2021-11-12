@@ -16,6 +16,7 @@ import uuid
 
 import boto3
 import botocore.configloader
+import botocore.config
 import yaml
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -260,6 +261,19 @@ class TestPyCWL(unittest.TestCase):
             logger.error("message")
 
         create_log_stream_mock.assert_not_called()
+
+    def test_client_config_retries(self):
+        config = botocore.config.Config(
+            retries={
+                'max_attempts': 10,
+                'mode': 'standard'
+            }
+        )
+        handler = CloudWatchLogHandler(client_config=config)
+        self.assertDictEqual(
+            handler.cwl_client._client_config.retries,
+            {'mode': 'standard', 'total_max_attempts': 11}
+        )
 
 
 if __name__ == "__main__":
