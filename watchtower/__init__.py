@@ -104,6 +104,9 @@ class CloudWatchLogHandler(logging.Handler):
         the appropriate URL to use when communicating with a service. You can specify a complete URL
         (including the "http/https" scheme) to override this behavior.
     :type endpoint_url: String
+    :param client_config:
+        boto3 client configuration options
+    :type client_config: botocore.config.Config
     """
     END = 1
     FLUSH = 2
@@ -125,7 +128,7 @@ class CloudWatchLogHandler(logging.Handler):
                  max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
                  boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
                  create_log_stream=True, json_serialize_default=None, max_message_size=256 * 1024,
-                 endpoint_url=None, *args, **kwargs):
+                 endpoint_url=None, client_config=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.log_group = log_group
         self.stream_name = stream_name
@@ -140,8 +143,9 @@ class CloudWatchLogHandler(logging.Handler):
         self._init_state()
 
         # Creating session should be the final call in __init__, after all instance attributes are set.
-        # This ensures that failing to create the session will not result in any missing attribtues.
-        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url)
+        # This ensures that failing to create the session will not result in any missing attributes.
+        session = self._get_session(boto3_session, boto3_profile_name)
+        self.cwl_client = session.client("logs", endpoint_url=endpoint_url, config=client_config)
         if create_log_group:
             _idempotent_create(self.cwl_client, "create_log_group", logGroupName=self.log_group)
 
