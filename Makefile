@@ -1,20 +1,17 @@
-SHELL=/bin/bash
-
 test_deps:
-	pip install coverage flake8 wheel pyyaml boto3
+	pip install .[tests]
 
 lint: test_deps
-	flake8
+	flake8 $$(python setup.py --name)
 
 test: test_deps lint
-	coverage run --source=watchtower ./test/test.py
+	coverage run --source=$$(python setup.py --name) ./test/test.py -v
 
 docs:
 	sphinx-build docs docs/html
 
 install: clean
-	pip install wheel
-	python ./setup.py bdist_wheel
+	python -m build .
 	pip install --upgrade dist/*.whl
 
 clean:

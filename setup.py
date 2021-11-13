@@ -15,10 +15,16 @@ setup(
     install_requires=[
         "boto3 >= 1.9.253, < 2",
     ],
-    tests_require=[
-        "pyyaml >= 5.3.1, < 6",
-        "flake8 >= 4.0.1, < 5"
-    ],
+    extras_require={
+        "tests": [
+            "pyyaml >= 5.3.1, < 6",
+            "flake8 >= 4.0.1, < 5",
+            "coverage",
+            "build",
+            "wheel",
+            "mypy"
+        ]
+    },
     packages=find_packages(exclude=["test"]),
     platforms=["MacOS X", "Posix"],
     include_package_data=True,
