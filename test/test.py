@@ -198,7 +198,7 @@ class TestPyCWL(unittest.TestCase):
         self.assertEqual(
             str(cm.warning),
             "Failed to deliver logs: Parameter validation failed:\n"
-            "Invalid length for parameter logEvents[0].message, value: 0, valid range: 1-inf",
+            "Invalid length for parameter logEvents[0].message, value: 0, valid min length: 1",
         )
 
     def test_create_log_stream_on_emit(self):
