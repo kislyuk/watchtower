@@ -263,6 +263,19 @@ class TestPyCWL(unittest.TestCase):
 
         create_log_stream_mock.assert_not_called()
 
+    def test_handle_error(self):
+        logging.config.dictConfig(self._make_dict_config(use_queues=False))
+        logger = logging.getLogger("root")
+        with mock.patch("watchtower.CloudWatchLogHandler._get_stream_name", side_effect=Exception("test")):
+            raise_exceptions = logging.raiseExceptions
+            try:
+                logging.raiseExceptions = True
+                logger.critical("test")
+                logging.raiseExceptions = False
+                logger.critical("test")
+            finally:
+                logging.raiseExceptions = raise_exceptions
+
 
 if __name__ == "__main__":
     unittest.main()
