@@ -20,7 +20,7 @@ import yaml
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from watchtower import CloudWatchLogHandler, WatchtowerWarning, _idempotent_create  # noqa: E402
+from watchtower import CloudWatchLogHandler, WatchtowerWarning  # noqa: E402
 
 
 class TestPyCWL(unittest.TestCase):
@@ -196,8 +196,7 @@ class TestPyCWL(unittest.TestCase):
             logger.critical("")
         self.assertEqual(
             str(cm.warning),
-            "Failed to deliver logs: Parameter validation failed:\n"
-            "Invalid length for parameter logEvents[0].message, value: 0, valid range: 1-inf",
+            "Received empty message. Empty messages cannot be sent to CloudWatch Logs"
         )
 
     def test_create_log_stream_on_emit(self):
@@ -222,7 +221,7 @@ class TestPyCWL(unittest.TestCase):
         logger.error(create_msg)
         self._wait_for_message(create_msg, log_group, log_stream)
 
-        with mock.patch("watchtower._idempotent_create") as create_log_stream_mock:
+        with mock.patch("watchtower.CloudWatchLogHandler._idempotent_call") as create_log_stream_mock:
             # Write another message, create stream should not be called here
             logger.error("another")
         create_log_stream_mock.assert_not_called()
@@ -249,14 +248,17 @@ class TestPyCWL(unittest.TestCase):
         )
         logging.config.dictConfig(config_dict)
         logger = logging.getLogger("root")
-        _idempotent_create(logs, "create_log_stream", logGroupName=log_group, logStreamName=log_stream)
+
+        class h:
+            cwl_client = logs
+        CloudWatchLogHandler._idempotent_call(h, "create_log_stream", logGroupName=log_group, logStreamName=log_stream)
         self.addCleanup(
             logs.delete_log_stream,
             logGroupName=log_group,
             logStreamName=log_stream,
         )
 
-        with mock.patch("watchtower._idempotent_create") as create_log_stream_mock:
+        with mock.patch("watchtower.CloudWatchLogHandler._idempotent_call") as create_log_stream_mock:
             logger.error("message")
 
         create_log_stream_mock.assert_not_called()
