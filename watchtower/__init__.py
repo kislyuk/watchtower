@@ -1,20 +1,12 @@
 from collections.abc import Mapping
 from datetime import date, datetime
 from operator import itemgetter
-import json, logging, time, threading, warnings
+import sys, json, logging, time, threading, warnings, functools, platform
 import queue
 
 import boto3
-import boto3.session
+import botocore
 from botocore.exceptions import ClientError
-
-
-def _idempotent_create(client, method, *args, **kwargs):
-    method_callable = getattr(client, method)
-    try:
-        method_callable(*args, **kwargs)
-    except (client.exceptions.OperationAbortedException, client.exceptions.ResourceAlreadyExistsException):
-        pass
 
 
 def _json_serialize_default(o):
@@ -49,18 +41,25 @@ class WatchtowerWarning(UserWarning):
     pass
 
 
+class WatchtowerError(Exception):
+    pass
+
+
 class CloudWatchLogHandler(logging.Handler):
     """
     Create a new CloudWatch log handler object. This is the main entry point to the functionality of the module. See
     http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/WhatIsCloudWatchLogs.html for more information.
 
-    :param log_group: Name of the CloudWatch log group to write logs to. By default, the name of this module is used.
-    :type log_group: String
-    :param stream_name:
-        Name of the CloudWatch log stream to write logs to. By default, the name of the logger that processed the
-        message is used. Accepts a format string parameter of {logger_name}, as well as {strftime:%m-%d-%y}, where
-        any strftime string can be used to include the current UTC datetime in the stream name.
-    :type stream_name: String
+    :param log_group_name:
+        Name of the CloudWatch log group to write logs to. By default, the name of this module is used.
+    :type log_group_name: String
+    :param log_stream_name:
+        Name of the CloudWatch log stream to write logs to. By default, a string containing the machine name, the
+        program name, and the name of the logger that processed the message is used. Accepts the following format string
+        parameters: {machine_name}, {program_name}, {thread_name}, {logger_name}, and {strftime:%m-%d-%y}, where any
+        strftime string can be used to include the current UTC datetime in the stream name. The strftime format string
+        option can be used to sort logs into streams on an hourly, daily, or monthly basis.
+    :type log_stream_name: String
     :param use_queues:
         If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue
         handler thread will be spawned.
@@ -77,10 +76,11 @@ class CloudWatchLogHandler(logging.Handler):
         Maximum number of messages in the queue before sending a batch. From CloudWatch Logs documentation: **The
         maximum number of log events in a batch is 10,000.**
     :type max_batch_count: Integer
-    :param boto3_session:
-        Session object to create boto3 `logs` clients. Accepts AWS credential, profile_name, and region_name from its
-        constructor.
-    :type boto3_session: boto3.session.Session
+    :param boto3_client:
+        Client object for sending boto3 logs. Use this to pass custom session or client parameters.
+
+        TODO: document custom credentials, profile name
+    :type boto3_client: botocore.client.BaseClient
     :param create_log_group:
         Create CloudWatch Logs log group if it does not exist.  **True** by default.
     :type create_log_group: Boolean
@@ -111,24 +111,27 @@ class CloudWatchLogHandler(logging.Handler):
     # extra size of meta information with each messages
     EXTRA_MSG_PAYLOAD_SIZE = 26
 
-    @staticmethod
-    def _get_session(boto3_session, boto3_profile_name):
-        if boto3_session:
-            return boto3_session
-
-        if boto3_profile_name:
-            return boto3.session.Session(profile_name=boto3_profile_name)
-
-        return boto3
-
-    def __init__(self, log_group=__name__, stream_name=None, use_queues=True, send_interval=60,
-                 max_batch_size=1024 * 1024, max_batch_count=10000, boto3_session=None,
-                 boto3_profile_name=None, create_log_group=True, log_group_retention_days=None,
-                 create_log_stream=True, json_serialize_default=None, max_message_size=256 * 1024,
-                 endpoint_url=None, *args, **kwargs):
+    def __init__(self,
+                 log_group_name: str = __name__,
+                 log_stream_name: str = "{machine_name}/{program_name}/{logger_name}",
+                 use_queues: bool = True,
+                 send_interval: int = 60,
+                 max_batch_size: int = 1024 * 1024,
+                 max_batch_count: int = 10000,
+                 boto3_client: botocore.client.BaseClient = None,
+                 boto3_profile_name: str = None,
+                 create_log_group: bool = True,
+                 log_group_retention_days: int = None,
+                 create_log_stream: bool = True,
+                 json_serialize_default=None,
+                 max_message_size: int = 256 * 1024,
+                 log_group=None,
+                 stream_name=None,
+                 *args,
+                 **kwargs):
         super().__init__(*args, **kwargs)
-        self.log_group = log_group
-        self.stream_name = stream_name
+        self.log_group_name = log_group_name
+        self.log_stream_name = log_stream_name
         self.use_queues = use_queues
         self.send_interval = send_interval
         self.json_serialize_default = json_serialize_default or _json_serialize_default
@@ -139,19 +142,37 @@ class CloudWatchLogHandler(logging.Handler):
         self.log_group_retention_days = log_group_retention_days
         self._init_state()
 
-        # Creating session should be the final call in __init__, after all instance attributes are set.
-        # This ensures that failing to create the session will not result in any missing attribtues.
-        self.cwl_client = self._get_session(boto3_session, boto3_profile_name).client("logs", endpoint_url=endpoint_url)
-        if create_log_group:
-            _idempotent_create(self.cwl_client, "create_log_group", logGroupName=self.log_group)
-
-        if log_group_retention_days:
-            _idempotent_create(self.cwl_client,
-                               "put_retention_policy",
-                               logGroupName=self.log_group,
-                               retentionInDays=self.log_group_retention_days)
+        if log_group is not None:
+            if log_group_name != __name__:
+                raise WatchtowerError("Both log_group_name and deprecated log_group parameter specified")
+            warnings.warn("log_group has been renamed to log_group_name", DeprecationWarning)
+            self.log_group_name = log_group
+        if stream_name is not None:
+            if log_stream_name != "{machine_name}/{program_name}/{logger_name}":
+                raise WatchtowerError("Both log_stream_name and deprecated stream_name parameter specified")
+            warnings.warn("stream_name has been renamed to log_stream_name", DeprecationWarning)
+            self.log_stream_name = stream_name
 
         self.addFilter(_boto_debug_filter)
+
+        # Creating the client should be the final call in __init__, after all instance attributes are set.
+        # This ensures that failing to create the session will not result in any missing attribtues.
+        if boto3_client is None and boto3_profile_name is None:
+            self.cwl_client = boto3.client("logs")
+        elif boto3_client is not None and boto3_profile_name is None:
+            self.cwl_client = boto3_client
+        elif boto3_client is None and boto3_profile_name is not None:
+            self.cwl_client = boto3.session.Session(profile_name=boto3_profile_name).client("logs")
+        else:
+            raise WatchtowerError("Either boto3_client or boto3_profile_name can be specified, but not both")
+
+        if create_log_group:
+            self._ensure_log_group()
+
+        if log_group_retention_days:
+            self._idempotent_call("put_retention_policy",
+                                  logGroupName=self.log_group_name,
+                                  retentionInDays=self.log_group_retention_days)
 
     def _at_fork_reinit(self):
         # This was added in Python 3.9 and should only be called with a recent
@@ -165,22 +186,51 @@ class CloudWatchLogHandler(logging.Handler):
         self.threads = []
         self.creating_log_stream, self.shutting_down = False, False
 
+    def _paginate(self, boto3_paginator, *args, **kwargs):
+        for page in boto3_paginator.paginate(*args, **kwargs):
+            for result_key in boto3_paginator.result_keys:
+                for value in page.get(result_key.parsed.get("value"), []):
+                    yield value
+
+    def _ensure_log_group(self):
+        try:
+            paginator = self.cwl_client.get_paginator("describe_log_groups")
+            for log_group in self._paginate(paginator, logGroupNamePrefix=self.log_group_name):
+                if log_group["logGroupName"] == self.log_group_name:
+                    return
+        except self.cwl_client.exceptions.ClientError:
+            pass
+        self._idempotent_call("create_log_group", logGroupName=self.log_group_name)
+
+    def _idempotent_call(self, method, *args, **kwargs):
+        method_callable = getattr(self.cwl_client, method)
+        try:
+            method_callable(*args, **kwargs)
+        except (self.cwl_client.exceptions.OperationAbortedException,
+                self.cwl_client.exceptions.ResourceAlreadyExistsException):
+            pass
+
+    @functools.lru_cache(maxsize=0)
+    def _get_machine_name(self):
+        return platform.node()
+
     def _get_stream_name(self, message):
-        stream_name = self.stream_name
+        return self.log_stream_name.format(
+            machine_name=self._get_machine_name(),
+            program_name=sys.argv[0],
+            thread_name=threading.current_thread().name,
+            logger_name=message.name,
+            strftime=datetime.utcnow()
+        )
 
-        if stream_name is None:
-            return message.name
-
-        return stream_name.format(logger_name=message.name, strftime=datetime.utcnow())
-
-    def _submit_batch(self, batch, stream_name, max_retries=5):
+    def _submit_batch(self, batch, log_stream_name, max_retries=5):
         if len(batch) < 1:
             return
         sorted_batch = sorted(batch, key=itemgetter('timestamp'), reverse=False)
-        kwargs = dict(logGroupName=self.log_group, logStreamName=stream_name,
+        kwargs = dict(logGroupName=self.log_group_name, logStreamName=log_stream_name,
                       logEvents=sorted_batch)
-        if self.sequence_tokens[stream_name] is not None:
-            kwargs["sequenceToken"] = self.sequence_tokens[stream_name]
+        if self.sequence_tokens[log_stream_name] is not None:
+            kwargs["sequenceToken"] = self.sequence_tokens[log_stream_name]
         response = None
 
         for retry in range(max_retries):
@@ -201,10 +251,9 @@ class CloudWatchLogHandler(logging.Handler):
                     if self.create_log_stream:
                         self.creating_log_stream = True
                         try:
-                            _idempotent_create(self.cwl_client,
-                                               "create_log_stream",
-                                               logGroupName=self.log_group,
-                                               logStreamName=stream_name)
+                            self._idempotent_call("create_log_stream",
+                                                  logGroupName=self.log_group_name,
+                                                  logStreamName=log_stream_name)
                             # We now have a new stream name and the next retry
                             # will be the first attempt to log to it, so we
                             # should not continue to use the old sequence token
@@ -224,7 +273,7 @@ class CloudWatchLogHandler(logging.Handler):
         elif "nextSequenceToken" in response:
             # According to https://github.com/kislyuk/watchtower/issues/134, nextSequenceToken may sometimes be absent
             # from the response
-            self.sequence_tokens[stream_name] = response["nextSequenceToken"]
+            self.sequence_tokens[log_stream_name] = response["nextSequenceToken"]
 
     def createLock(self):
         super().createLock()
@@ -233,6 +282,9 @@ class CloudWatchLogHandler(logging.Handler):
     def emit(self, message):
         if self.creating_log_stream:
             return  # Avoid infinite recursion when asked to log a message as our own side effect
+
+        if message.msg == "":
+            warnings.warn("Received empty message. Empty messages cannot be sent to CloudWatch Logs", WatchtowerWarning)
 
         stream_name = self._get_stream_name(message)
 
@@ -247,7 +299,7 @@ class CloudWatchLogHandler(logging.Handler):
         if self.use_queues:
             if stream_name not in self.queues:
                 self.queues[stream_name] = queue.Queue()
-                thread = threading.Thread(target=self.batch_sender,
+                thread = threading.Thread(target=self._dequeue_batch,
                                           args=(self.queues[stream_name], stream_name, self.send_interval,
                                                 self.max_batch_size, self.max_batch_count, self.max_message_size))
                 self.threads.append(thread)
@@ -260,7 +312,7 @@ class CloudWatchLogHandler(logging.Handler):
         else:
             self._submit_batch([cwl_message], stream_name)
 
-    def batch_sender(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count, max_message_size):
+    def _dequeue_batch(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count, max_message_size):
         msg = None
         max_message_body_size = max_message_size - CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
 
