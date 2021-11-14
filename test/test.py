@@ -8,6 +8,7 @@ import logging.config
 import os
 import os.path
 import sys
+import json
 import tempfile
 import time
 import unittest
@@ -275,6 +276,41 @@ class TestPyCWL(unittest.TestCase):
                 logger.critical("test")
             finally:
                 logging.raiseExceptions = raise_exceptions
+
+    @unittest.skipIf(sys.version_info < (3, 8), "Skip test that requires unittest.mock > 3.8")
+    def test_formatters(self):
+        logging.config.dictConfig(self._make_dict_config(use_queues=False))
+        logger = logging.getLogger("root")
+        date = datetime.now()
+        with mock.patch("watchtower.CloudWatchLogHandler._submit_batch") as submit_batch:
+            logger.critical({"date": date})
+        submit_batch.assert_called_once()
+        self.assertEqual(submit_batch.call_args_list[-1].args[0][0]["message"], json.dumps({"date": date.isoformat()}))
+
+        del logger.handlers[:]
+        handler = CloudWatchLogHandler(json_serialize_default=str, use_queues=False)
+        logger.addHandler(handler)
+        with mock.patch("watchtower.CloudWatchLogHandler._submit_batch") as submit_batch:
+            logger.critical({"date": date})
+        submit_batch.assert_called_once()
+        self.assertEqual(submit_batch.call_args_list[-1].args[0][0]["message"], json.dumps({"date": str(date)}))
+
+        handler.formatter.json_serialize_default = None
+        with mock.patch("watchtower.CloudWatchLogHandler._submit_batch") as submit_batch:
+            logger.critical({"date": date})
+        submit_batch.assert_not_called()  # Error serializing message, caught and printed by logging
+
+        del logger.handlers[:]
+        handler = CloudWatchLogHandler(json_serialize_default=str, use_queues=False)
+        logger.addHandler(handler)
+        handler.formatter.add_log_record_attrs = ["levelname"]
+        with mock.patch("watchtower.CloudWatchLogHandler._submit_batch") as submit_batch:
+            logger.critical("hello")
+            logger.critical({"msg": "hello", "metadata": {}})
+        self.assertEqual(submit_batch.call_args_list[-2].args[0][0]["message"],
+                         json.dumps({"msg": "hello", "levelname": "CRITICAL"}))
+        self.assertEqual(submit_batch.call_args_list[-1].args[0][0]["message"],
+                         json.dumps({"msg": "hello", "metadata": {}, "levelname": "CRITICAL"}))
 
 
 if __name__ == "__main__":

@@ -38,72 +38,133 @@ def _boto_filter(record):
 
 
 class WatchtowerWarning(UserWarning):
-    pass
+    "Default warning class for the watchtower module."
 
 
 class WatchtowerError(Exception):
-    pass
+    "Default exception class for the watchtower module."
+
+
+class CloudWatchLogFormatter(logging.Formatter):
+    """
+    Log formatter for CloudWatch messages. Transforms logged message into a message compatible with the CloudWatch API.
+    This is the default formatter for CloudWatchLogHandler.
+
+    This log formatter is designed to accommodate structured log messages by correctly serializing them as JSON, which
+    is automatically recognized, parsed, and indexed by CloudWatch Logs. To use this feature, pass a dictionary input
+    to the logger instead of a plain string::
+
+        logger = logging.getLogger(__name__)
+        logger.addHandler(watchtower.CloudWatchLogHandler())
+        logger.critical({"request": "hello", "metadata": {"size": 9000}})
+
+    If the optional `add_log_record_attrs` attribute or keyword argument is set, it enables the forwarding of specified
+    `LogRecord attributes <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_ with the message.
+    In this mode, if the message is not already a dictionary, it is converted to one with the original message under the
+    `msg` key::
+
+        logger = logging.getLogger(__name__)
+        handler = watchtower.CloudWatchLogHandler()
+        handler.formatter.add_log_record_attrs=["levelname", "filename", "process", "thread"]
+        logger.addHandler(handler)
+        logger.critical({"request": "hello", "metadata": {"size": 9000}})
+
+    The resulting raw CloudWatch Logs event will look like this::
+
+        {"timestamp": 1636868049692,
+         "message": '{"request": "hello",
+                      "metadata": {"size": 9000},
+                      "levelname": "CRITICAL",
+                      "filename": "/path/to/app.py",
+                      "process": 74542,
+                      "thread": 4659336704}',
+         "ingestionTime": 1636868050028}
+
+    This enables sending log message metadata as structured log data instead of relying on string formatting.
+    See `LogRecord attributes <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_ for the full list
+    of available attributes.
+
+    :param json_serialize_default:
+        The 'default' function to use when serializing dictionaries as JSON. See the
+        `JSON module documentation <https://docs.python.org/3/library/json.html#json.dump>`_
+        for more details about the 'default' parameter. By default, watchtower uses a serializer that formats datetime
+        objects into strings using the `datetime.isoformat()` method, with no other customizations.
+    """
+    add_log_record_attrs = tuple()
+
+    def __init__(self, *args, json_serialize_default: callable = None, add_log_record_attrs: tuple = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.json_serialize_default = _json_serialize_default
+        if json_serialize_default is not None:
+            self.json_serialize_default = json_serialize_default
+        if add_log_record_attrs is not None:
+            self.add_log_record_attrs = add_log_record_attrs
+
+    def format(self, message):
+        if self.add_log_record_attrs:
+            msg = message.msg if isinstance(message.msg, Mapping) else {"msg": message.msg}
+            for field in self.add_log_record_attrs:
+                if field != "msg":
+                    msg[field] = getattr(message, field)
+            message.msg = msg
+        if isinstance(message.msg, Mapping):
+            return json.dumps(message.msg, default=self.json_serialize_default)
+        return super().format(message)
 
 
 class CloudWatchLogHandler(logging.Handler):
     """
     Create a new CloudWatch log handler object. This is the main entry point to the functionality of the module. See
-    http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/WhatIsCloudWatchLogs.html for more information.
+    the `CloudWatch Logs developer guide
+    <http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/WhatIsCloudWatchLogs.html>`_ and the
+    `Python logging module documentation <https://docs.python.org/3/library/logging.html>` for more information.
 
     :param log_group_name:
         Name of the CloudWatch log group to write logs to. By default, the name of this module is used.
-    :type log_group_name: String
     :param log_stream_name:
         Name of the CloudWatch log stream to write logs to. By default, a string containing the machine name, the
         program name, and the name of the logger that processed the message is used. Accepts the following format string
         parameters: {machine_name}, {program_name}, {thread_name}, {logger_name}, and {strftime:%m-%d-%y}, where any
         strftime string can be used to include the current UTC datetime in the stream name. The strftime format string
         option can be used to sort logs into streams on an hourly, daily, or monthly basis.
-    :type log_stream_name: String
     :param use_queues:
         If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue
         handler thread will be spawned.
-    :type queue: Boolean
     :param send_interval:
         Maximum time (in seconds, or a timedelta) to hold messages in queue before sending a batch.
-    :type send_interval: Integer
     :param max_batch_size:
-        Maximum size (in bytes) of the queue before sending a batch. From CloudWatch Logs documentation: **The maximum
+        Maximum size (in bytes) of the queue before sending a batch. From CloudWatch Logs documentation: *The maximum
         batch size is 1,048,576 bytes, and this size is calculated as the sum of all event messages in UTF-8, plus 26
-        bytes for each log event.**
-    :type max_batch_size: Integer
+        bytes for each log event.*
     :param max_batch_count:
-        Maximum number of messages in the queue before sending a batch. From CloudWatch Logs documentation: **The
-        maximum number of log events in a batch is 10,000.**
-    :type max_batch_count: Integer
+        Maximum number of messages in the queue before sending a batch. From CloudWatch Logs documentation: *The
+        maximum number of log events in a batch is 10,000.*
     :param boto3_client:
-        Client object for sending boto3 logs. Use this to pass custom session or client parameters.
+        Client object for sending boto3 logs. Use this to pass custom session or client parameters. For example,
+        to specify a custom region::
 
-        TODO: document custom credentials, profile name
-    :type boto3_client: botocore.client.BaseClient
+            CloudWatchLogHandler(boto3_client=boto3.client("logs", region_name="us-west-2"))
+
+        See the
+        `boto3 session reference <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html>`_
+        for details about the available session and client options.
+    :param boto3_profile_name:
+        Name of the boto3 configuration profile to use. This option is provided for situations where the logger should
+        use a different AWS client configuration from the rest of the system, but declarative configuration via a static
+        dictionary or config file is desired.
     :param create_log_group:
         Create CloudWatch Logs log group if it does not exist.  **True** by default.
-    :type create_log_group: Boolean
     :param log_group_retention_days:
         Sets the retention policy of the log group in days.  **None** by default.
-    :type log_group_retention_days: Integer
     :param create_log_stream:
         Create CloudWatch Logs log stream if it does not exist.  **True** by default.
-    :type create_log_stream: Boolean
     :param json_serialize_default:
-        The 'default' function to use when serializing dictionaries as JSON. Refer to the Python standard library
-        documentation on 'json' for more explanation about the 'default' parameter.
-        https://docs.python.org/3/library/json.html#json.dump
-        https://docs.python.org/2/library/json.html#json.dump
-    :type json_serialize_default: Function
+        The 'default' function to use when serializing dictionaries as JSON. See the
+        `JSON module documentation <https://docs.python.org/3/library/json.html#json.dump>`_
+        for more details about the 'default' parameter. By default, watchtower uses a serializer that formats datetime
+        objects into strings using the `datetime.isoformat()` method, with no other customizations.
     :param max_message_size:
         Maximum size (in bytes) of a single message.
-    :type max_message_size: Integer
-    :param endpoint_url:
-        The complete URL to use for the constructed client. Normally, botocore will automatically construct
-        the appropriate URL to use when communicating with a service. You can specify a complete URL
-        (including the "http/https" scheme) to override this behavior.
-    :type endpoint_url: String
     """
     END = 1
     FLUSH = 2
@@ -121,9 +182,9 @@ class CloudWatchLogHandler(logging.Handler):
                  boto3_client: botocore.client.BaseClient = None,
                  boto3_profile_name: str = None,
                  create_log_group: bool = True,
+                 json_serialize_default: callable = None,
                  log_group_retention_days: int = None,
                  create_log_stream: bool = True,
-                 json_serialize_default=None,
                  max_message_size: int = 256 * 1024,
                  log_group=None,
                  stream_name=None,
@@ -145,14 +206,15 @@ class CloudWatchLogHandler(logging.Handler):
         if log_group is not None:
             if log_group_name != __name__:
                 raise WatchtowerError("Both log_group_name and deprecated log_group parameter specified")
-            warnings.warn("log_group has been renamed to log_group_name", DeprecationWarning)
+            warnings.warn("Please use log_group_name instead of log_group", DeprecationWarning)
             self.log_group_name = log_group
         if stream_name is not None:
             if log_stream_name != "{machine_name}/{program_name}/{logger_name}":
                 raise WatchtowerError("Both log_stream_name and deprecated stream_name parameter specified")
-            warnings.warn("stream_name has been renamed to log_stream_name", DeprecationWarning)
+            warnings.warn("Please use log_stream_name instead of stream_name", DeprecationWarning)
             self.log_stream_name = stream_name
 
+        self.setFormatter(CloudWatchLogFormatter(json_serialize_default=json_serialize_default))
         self.addFilter(_boto_debug_filter)
 
         # Creating the client should be the final call in __init__, after all instance attributes are set.
@@ -285,15 +347,13 @@ class CloudWatchLogHandler(logging.Handler):
 
         if message.msg == "":
             warnings.warn("Received empty message. Empty messages cannot be sent to CloudWatch Logs", WatchtowerWarning)
+            return
 
         try:
             stream_name = self._get_stream_name(message)
 
             if stream_name not in self.sequence_tokens:
                 self.sequence_tokens[stream_name] = None
-
-            if isinstance(message.msg, Mapping):
-                message.msg = json.dumps(message.msg, default=self.json_serialize_default)
 
             cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
 
@@ -389,3 +449,7 @@ class CloudWatchLogHandler(logging.Handler):
         for q in self.queues.values():
             q.join()
         super().close()
+
+    def __repr__(self):
+        name = self.__class__.__name__
+        return f"{name}(log_group_name='{self.log_group_name}', log_stream_name='{self.log_stream_name}')"
