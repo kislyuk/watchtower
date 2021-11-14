@@ -23,7 +23,6 @@ setup(
             "build",
             "wheel",
             "mypy",
-            "sphinx-autodoc-typehints"
         ]
     },
     packages=find_packages(exclude=["test"]),
