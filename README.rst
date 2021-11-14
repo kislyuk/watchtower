@@ -46,7 +46,7 @@ credentials provider (AWS_WEB_IDENTITY_TOKEN_FILE or AWS_CONTAINER_CREDENTIALS_F
 right permissions to the IAM role associated with these credentials is by attaching an AWS
 `managed IAM policy <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html>`_ to the
 role. While AWS provides no generic managed CloudWatch Logs writer policy, it is recommended that you use the
-`arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs` managed policy, which has just the right permissions without being
+``arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs`` managed policy, which has just the right permissions without being
 overly broad.
 
 Example: Flask logging with Watchtower
