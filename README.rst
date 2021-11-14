@@ -106,8 +106,8 @@ This is an example of Watchtower integration with Django. In your Django project
                 'level': 'DEBUG',
                 'class': 'watchtower.CloudWatchLogHandler',
                 'boto3_client': boto3_client,
-                'log_group': 'MyLogGroupName',
-                'stream_name': 'MyStreamName',
+                'log_group_name': 'MyLogGroupName',
+                'log_stream_name': 'MyStreamName',
                 'formatter': 'aws',
             },
         },
@@ -183,8 +183,8 @@ configuration provided by ``boto3``:
         class: watchtower.CloudWatchLogHandler
         formatter: json
         level: DEBUG
-        log_group: watchtower
-        stream_name: "{logger_name}-{strftime:%y-%m-%d}"
+        log_group_name: watchtower
+        log_stream_name: "{logger_name}-{strftime:%y-%m-%d}"
         send_interval: 10
         create_log_group: False
     root:
