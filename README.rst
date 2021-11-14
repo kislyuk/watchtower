@@ -81,7 +81,7 @@ This is an example of Watchtower integration with Django. In your Django project
 
     AWS_REGION_NAME = 'your region'
 
-    boto3_logs_client = boto3.client(region_name=AWS_REGION_NAME)
+    boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)
 
     LOGGING = {
         'version': 1,
@@ -105,7 +105,7 @@ This is an example of Watchtower integration with Django. In your Django project
             'watchtower': {
                 'level': 'DEBUG',
                 'class': 'watchtower.CloudWatchLogHandler',
-                'boto3_client': boto3_client,
+                'boto3_client': boto3_logs_client,
                 'log_group_name': 'MyLogGroupName',
                 'log_stream_name': 'MyStreamName',
                 'formatter': 'aws',
