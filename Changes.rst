@@ -1,3 +1,38 @@
+Changes for v2.0.0 (2021-11-13)
+===============================
+
+-  Rename log_group to log_group_name for consistency with the Boto3 API
+
+-  Rename stream_name to log_stream_name for consistency with the Boto3
+   API
+
+-  Introduce the ability to pass a Boto3 logs client and remove the
+   ability to pass Boto3 sessions
+
+-  Document the ability to pass a Boto3 configuration profile name for
+   declarative configs
+
+-  Remove the Django customization, which was deprecated and unneeded.
+   Django can use watchtower directly via its logging configuration as
+   documented in the readme
+
+-  Introduce configurable log formatters. Special thanks to
+   @terencehonles for starting this work (#117, #138)
+
+-  Use logging.Handler.handleError to correctly handle errors while
+   processing log records (#149)
+
+-  Move stream name determining logic to separate method (#148)
+
+-  Reset internal state on fork to prevent deadlocks in worker threads
+   (#139)
+
+-  Drop Python 3.5 support
+
+-  Expand documentation
+
+-  Update test and release infrastructure
+
 Changes for v1.0.6 (2021-01-17)
 ===============================
 
