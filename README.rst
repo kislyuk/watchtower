@@ -3,8 +3,8 @@ Watchtower: Python CloudWatch Logging
 Watchtower is a log handler for `Amazon Web Services CloudWatch Logs
 <https://aws.amazon.com/blogs/aws/cloudwatch-log-service/>`_.
 
-CloudWatch Logs is a log management service built into AWS. It is conceptually similar to services like Splunk and
-Loggly, but is more lightweight, cheaper, and tightly integrated with the rest of AWS.
+CloudWatch Logs is a log management service built into AWS. It is conceptually similar to services like Splunk, Datadog,
+and Loggly, but is more lightweight, cheaper, and tightly integrated with the rest of AWS.
 
 Watchtower, in turn, is a lightweight adapter between the `Python logging system
 <https://docs.python.org/library/logging.html>`_ and CloudWatch Logs. It uses the `boto3 AWS SDK
@@ -41,10 +41,10 @@ The process running watchtower needs to have access to IAM credentials to call t
 for loading and configuring credentials is described in the
 `Boto3 Credentials documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html>`_.
 When running Watchtower on an EC2 instance or other AWS compute resource, boto3 automatically loads credentials from
-`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>` or container
+`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>`_ or container
 credentials provider (AWS_WEB_IDENTITY_TOKEN_FILE or AWS_CONTAINER_CREDENTIALS_FULL_URI). The easiest way to grant the
 right permissions to the IAM role associated with these credentials is by attaching an AWS
-`managed IAM policy <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html>` to the
+`managed IAM policy <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html>`_ to the
 role. While AWS provides no generic managed CloudWatch Logs writer policy, it is recommended that you use the
 `arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs` managed policy, which has just the right permissions without being
 overly broad.
@@ -77,15 +77,11 @@ This is an example of Watchtower integration with Django. In your Django project
 
 .. code-block:: python
 
-    from boto3.session import Session
+    import boto3
 
-    AWS_ACCESS_KEY_ID = 'your access key'
-    AWS_SECRET_ACCESS_KEY = 'your secret access key'
     AWS_REGION_NAME = 'your region'
 
-    boto3_session = Session(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                            region_name=AWS_REGION_NAME)
+    boto3_logs_client = boto3.client(region_name=AWS_REGION_NAME)
 
     LOGGING = {
         'version': 1,
@@ -109,7 +105,7 @@ This is an example of Watchtower integration with Django. In your Django project
             'watchtower': {
                 'level': 'DEBUG',
                 'class': 'watchtower.CloudWatchLogHandler',
-                'boto3_session': boto3_session,
+                'boto3_client': boto3_client,
                 'log_group': 'MyLogGroupName',
                 'stream_name': 'MyStreamName',
                 'formatter': 'aws',
@@ -129,9 +125,9 @@ Using this configuration, every log statement from Django will be sent to Cloudw
 under the stream name ``MyStreamName``. Instead of setting credentials via ``AWS_ACCESS_KEY_ID`` and other variables
 in ``settings.py``, it is recommended that you assign an IAM role to your instance, prompting boto3 to automatically
 ingest IAM role credentials from
-`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>`.
+`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>`_.
 
-(See also the `Django logging documentation <https://docs.djangoproject.com/en/dev/topics/logging/>`__).
+(See also the `Django logging documentation <https://docs.djangoproject.com/en/dev/topics/logging/>`_.)
 
 Examples: Querying CloudWatch logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,7 +139,10 @@ For the Flask example above, you can retrieve your application logs with the fol
     aws logs get-log-events --log-group-name watchtower --log-stream-name loggable | jq '.events[].message'
     aws logs get-log-events --log-group-name watchtower --log-stream-name werkzeug | jq '.events[].message'
 
-CloudWatch Logs supports alerting and dashboards based on `metric filters
+In addition to the raw get-log-events API, CloudWatch Logs supports
+`extraction of your logs into an S3 bucket <https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/S3Export.html>`_,
+`log analysis with a query language <https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html>`_,
+and alerting and dashboards based on `metric filters
 <http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/FilterAndPatternSyntax.html>`_, which are pattern
 rules that extract information from your logs and feed it to alarms and dashboard graphs.
 
