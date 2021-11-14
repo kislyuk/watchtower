@@ -144,7 +144,10 @@ In addition to the raw get-log-events API, CloudWatch Logs supports
 `log analysis with a query language <https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html>`_,
 and alerting and dashboards based on `metric filters
 <http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/FilterAndPatternSyntax.html>`_, which are pattern
-rules that extract information from your logs and feed it to alarms and dashboard graphs.
+rules that extract information from your logs and feed it to alarms and dashboard graphs. If you want to make use of
+these features on the command line, the author of Watchtower has a toolkit called
+`aegea <https://github.com/kislyuk/aegea>`_ that includes the commands ``aegea logs`` and ``aegea grep`` to easily
+access the S3 Export and Insights features.
 
 Examples: Python Logging Config
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
