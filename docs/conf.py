@@ -7,11 +7,12 @@ version = ""
 release = ""
 language = None
 master_doc = "index"
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.autodoc.typehints", "sphinx.ext.viewcode"]
 source_suffix = [".rst", ".md"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 pygments_style = "sphinx"
-autodoc_typehints = "description"
+autoclass_content = "both"
+autodoc_typehints = "both"
 
 if "readthedocs.org" in os.getcwd().split("/"):
     with open("index.rst", "w") as fh:
