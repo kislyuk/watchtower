@@ -345,7 +345,7 @@ class CloudWatchLogHandler(logging.Handler):
         if self.creating_log_stream:
             return  # Avoid infinite recursion when asked to log a message as our own side effect
 
-        if message.msg == "":
+        if message.getMessage() == "":
             warnings.warn("Received empty message. Empty messages cannot be sent to CloudWatch Logs", WatchtowerWarning)
             return
 
