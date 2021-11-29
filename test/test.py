@@ -193,12 +193,13 @@ class TestPyCWL(unittest.TestCase):
         handler = CloudWatchLogHandler(use_queues=False)
         logger = logging.getLogger("empty")
         logger.addHandler(handler)
-        with self.assertWarns(WatchtowerWarning) as cm:
-            logger.critical("")
-        self.assertEqual(
-            str(cm.warning),
-            "Received empty message. Empty messages cannot be sent to CloudWatch Logs"
-        )
+        for args in [("",), ("%s", '')]:
+            with self.assertWarns(WatchtowerWarning) as cm:
+                logger.critical(*args)
+            self.assertEqual(
+                str(cm.warning),
+                "Received empty message. Empty messages cannot be sent to CloudWatch Logs"
+            )
 
     def test_create_log_stream_on_emit(self):
         log_group = "py_watchtower_test"
