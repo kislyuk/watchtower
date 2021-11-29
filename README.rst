@@ -37,13 +37,13 @@ After running the example, you can see the log output in your `AWS console
 
 IAM permissions
 ~~~~~~~~~~~~~~~
-The process running watchtower needs to have access to IAM credentials to call the CloudWatch Logs API. The process
-for loading and configuring credentials is described in the
+The process running watchtower needs to have access to IAM credentials to call the CloudWatch Logs API. The standard
+procedure for loading and configuring credentials is described in the
 `Boto3 Credentials documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html>`_.
 When running Watchtower on an EC2 instance or other AWS compute resource, boto3 automatically loads credentials from
-`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>`_ or container
-credentials provider (AWS_WEB_IDENTITY_TOKEN_FILE or AWS_CONTAINER_CREDENTIALS_FULL_URI). The easiest way to grant the
-right permissions to the IAM role associated with these credentials is by attaching an AWS
+`instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>`_ (IMDS) or
+container credentials provider (AWS_WEB_IDENTITY_TOKEN_FILE or AWS_CONTAINER_CREDENTIALS_FULL_URI). The easiest way to
+grant the right permissions to the IAM role associated with these credentials is by attaching an AWS
 `managed IAM policy <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html>`_ to the
 role. While AWS provides no generic managed CloudWatch Logs writer policy, it is recommended that you use the
 ``arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs`` managed policy, which has just the right permissions without being
@@ -145,7 +145,7 @@ In addition to the raw get-log-events API, CloudWatch Logs supports
 and alerting and dashboards based on `metric filters
 <http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/FilterAndPatternSyntax.html>`_, which are pattern
 rules that extract information from your logs and feed it to alarms and dashboard graphs. If you want to make use of
-these features on the command line, the author of Watchtower has a toolkit called
+these features on the command line, the author of Watchtower has published an open source CLI toolkit called
 `aegea <https://github.com/kislyuk/aegea>`_ that includes the commands ``aegea logs`` and ``aegea grep`` to easily
 access the S3 Export and Insights features.
 
