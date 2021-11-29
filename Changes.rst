@@ -1,3 +1,8 @@
+Changes for v2.0.1 (2021-11-29)
+===============================
+
+-  Update empty message filtering to catch formatted string case (#162)
+
 Changes for v2.0.0 (2021-11-13)
 ===============================
 
