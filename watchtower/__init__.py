@@ -117,7 +117,7 @@ class CloudWatchLogHandler(logging.Handler):
     Create a new CloudWatch log handler object. This is the main entry point to the functionality of the module. See
     the `CloudWatch Logs developer guide
     <http://docs.aws.amazon.com/AmazonCloudWatch/latest/DeveloperGuide/WhatIsCloudWatchLogs.html>`_ and the
-    `Python logging module documentation <https://docs.python.org/3/library/logging.html>` for more information.
+    `Python logging module documentation <https://docs.python.org/3/library/logging.html>`_ for more information.
 
     :param log_group_name:
         Name of the CloudWatch log group to write logs to. By default, the name of this module is used.
