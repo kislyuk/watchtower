@@ -45,7 +45,7 @@ When running Watchtower on an EC2 instance or other AWS compute resource, boto3 
 container credentials provider (AWS_WEB_IDENTITY_TOKEN_FILE or AWS_CONTAINER_CREDENTIALS_FULL_URI). The easiest way to
 grant the right permissions to the IAM role associated with these credentials is by attaching an AWS
 `managed IAM policy <https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html>`_ to the
-role. While AWS provides no generic managed CloudWatch Logs writer policy, it is recommended that you use the
+role. While AWS provides no generic managed CloudWatch Logs writer policy, we recommend that you use the
 ``arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs`` managed policy, which has just the right permissions without being
 overly broad.
 
@@ -79,7 +79,7 @@ This is an example of Watchtower integration with Django. In your Django project
 
     import boto3
 
-    AWS_REGION_NAME = 'your region'
+    AWS_REGION_NAME = "us-west-2"
 
     boto3_logs_client = boto3.client("logs", region_name=AWS_REGION_NAME)
 
@@ -87,44 +87,47 @@ This is an example of Watchtower integration with Django. In your Django project
         'version': 1,
         'disable_existing_loggers': False,
         'root': {
-            'level': logging.ERROR,
-            'handlers': ['console'],
-        },
-        'formatters': {
-            'simple': {
-                'format': "%(asctime)s [%(levelname)-8s] %(message)s",
-                'datefmt': "%Y-%m-%d %H:%M:%S"
-            },
-            'aws': {
-                # you can add specific format for aws here
-                'format': "%(asctime)s [%(levelname)-8s] %(message)s",
-                'datefmt': "%Y-%m-%d %H:%M:%S"
-            },
+            'level': 'DEBUG',
+            # Adding the watchtower handler here causes all loggers in the project that have
+            # propagate=True to send messages to watchtower. If you wish to send only from
+            # specific loggers instead, remove "watchtower" here and configure individual
+            # loggers below.
+            'handlers': ['watchtower', 'console'],
         },
         'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+            },
             'watchtower': {
-                'level': 'DEBUG',
                 'class': 'watchtower.CloudWatchLogHandler',
                 'boto3_client': boto3_logs_client,
-                'log_group_name': 'MyLogGroupName',
-                'log_stream_name': 'MyStreamName',
-                'formatter': 'aws',
-            },
+                'log_group_name': 'django-watchtower',
+                # Decrease the verbosity level here to send only those logs to watchtower, but still
+                # see more verbose logs in the console. See the watchtower documentation for other
+                # parameters that can be set here.
+                'level': 'DEBUG'
+            }
         },
         'loggers': {
+            # In the debug server (`manage.py runserver`), several Django system loggers cause
+            # deadlocks when using threading in the logging handler, and are not supported by
+            # watchtower. This limitation does not apply when running on production WSGI servers
+            # (gunicorn, uwsgi, etc.), so we recommend that you set `propagate=True` below in your
+            # production-specific Django settings file to receive Django system logs in CloudWatch.
             'django': {
-                'level': 'INFO',
-                'handlers': ['watchtower'],
-                'propagate': False,
-            },
-            # add your other loggers here...
-        },
+                'level': 'DEBUG',
+                'handlers': ['console'],
+                'propagate': False
+            }
+            # Add any other logger-specific configuration here.
+        }
     }
 
-Using this configuration, every log statement from Django will be sent to Cloudwatch in the log group ``MyLogGroupName``
-under the stream name ``MyStreamName``. Instead of setting credentials via ``AWS_ACCESS_KEY_ID`` and other variables
-in ``settings.py``, it is recommended that you assign an IAM role to your instance, prompting boto3 to automatically
-ingest IAM role credentials from
+Using this configuration, every log statement from Django will be sent to Cloudwatch in the log group ``django-watchtower``.
+To supply AWS credentials to this configuration in development, set your 
+`AWS CLI profile settings <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html>`_ with
+``aws configure``. To supply credentials in production or when running on an EC2 instance,
+assign an IAM role to your instance, which will cause boto3 to automatically ingest IAM role credentials from
 `instance metadata <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html>`_.
 
 (See also the `Django logging documentation <https://docs.djangoproject.com/en/dev/topics/logging/>`_.)
