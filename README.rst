@@ -52,13 +52,15 @@ overly broad.
 Example: Flask logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Use the following configuration to send Flask logs to a CloudWatch Logs stream called "loggable":
+
 .. code-block:: python
 
     import watchtower, flask, logging
 
     logging.basicConfig(level=logging.INFO)
     app = flask.Flask("loggable")
-    handler = watchtower.CloudWatchLogHandler()
+    handler = watchtower.CloudWatchLogHandler(log_group_name=app.name)
     app.logger.addHandler(handler)
     logging.getLogger("werkzeug").addHandler(handler)
 
@@ -101,7 +103,7 @@ This is an example of Watchtower integration with Django. In your Django project
             'watchtower': {
                 'class': 'watchtower.CloudWatchLogHandler',
                 'boto3_client': boto3_logs_client,
-                'log_group_name': 'django-watchtower',
+                'log_group_name': 'YOUR_DJANGO_PROJECT_NAME',
                 # Decrease the verbosity level here to send only those logs to watchtower, but still
                 # see more verbose logs in the console. See the watchtower documentation for other
                 # parameters that can be set here.
@@ -123,7 +125,7 @@ This is an example of Watchtower integration with Django. In your Django project
         }
     }
 
-Using this configuration, every log statement from Django will be sent to Cloudwatch in the log group ``django-watchtower``.
+Using this configuration, logs from Django will be sent to Cloudwatch in the log group ``YOUR_DJANGO_PROJECT_NAME``.
 To supply AWS credentials to this configuration in development, set your 
 `AWS CLI profile settings <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html>`_ with
 ``aws configure``. To supply credentials in production or when running on an EC2 instance,
