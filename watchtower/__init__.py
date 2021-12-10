@@ -128,8 +128,10 @@ class CloudWatchLogHandler(logging.Handler):
         strftime string can be used to include the current UTC datetime in the stream name. The strftime format string
         option can be used to sort logs into streams on an hourly, daily, or monthly basis.
     :param use_queues:
-        If **True**, logs will be queued on a per-stream basis and sent in batches. To manage the queues, a queue
-        handler thread will be spawned.
+        If **True** (the default), logs will be queued on a per-stream basis and sent in batches. To manage the queues,
+        a queue handler thread will be spawned. You can set this to False to make it easier to debug threading issues in
+        your application. Setting this to False in production is not recommended, since it will cause performance issues
+        due to the synchronous sending of one CloudWatch API request per log message.
     :param send_interval:
         Maximum time (in seconds, or a timedelta) to hold messages in queue before sending a batch.
     :param max_batch_size:
