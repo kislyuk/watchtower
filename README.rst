@@ -90,10 +90,10 @@ This is an example of Watchtower integration with Django. In your Django project
         'disable_existing_loggers': False,
         'root': {
             'level': 'DEBUG',
-            # Adding the watchtower handler here causes all loggers in the project that have
-            # propagate=True to send messages to watchtower. If you wish to send only from
-            # specific loggers instead, remove "watchtower" here and configure individual
-            # loggers below.
+            # Adding the watchtower handler here causes all loggers in the project that
+            # have propagate=True (the default) to send messages to watchtower. If you
+            # wish to send only from specific loggers instead, remove "watchtower" here
+            # and configure individual loggers below.
             'handlers': ['watchtower', 'console'],
         },
         'handlers': {
@@ -104,9 +104,9 @@ This is an example of Watchtower integration with Django. In your Django project
                 'class': 'watchtower.CloudWatchLogHandler',
                 'boto3_client': boto3_logs_client,
                 'log_group_name': 'YOUR_DJANGO_PROJECT_NAME',
-                # Decrease the verbosity level here to send only those logs to watchtower, but still
-                # see more verbose logs in the console. See the watchtower documentation for other
-                # parameters that can be set here.
+                # Decrease the verbosity level here to send only those logs to watchtower,
+                # but still see more verbose logs in the console. See the watchtower
+                # documentation for other parameters that can be set here.
                 'level': 'DEBUG'
             }
         },
