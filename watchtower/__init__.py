@@ -8,6 +8,8 @@ import boto3
 import botocore
 from botocore.exceptions import ClientError
 
+DEFAULT_LOG_STREAM_NAME = "{machine_name}/{program_name}/{logger_name}/{process_id}"
+
 
 def _json_serialize_default(o):
     """
@@ -176,7 +178,7 @@ class CloudWatchLogHandler(logging.Handler):
 
     def __init__(self,
                  log_group_name: str = __name__,
-                 log_stream_name: str = "{machine_name}/{program_name}/{logger_name}/{process_id}",
+                 log_stream_name: str = DEFAULT_LOG_STREAM_NAME,
                  use_queues: bool = True,
                  send_interval: int = 60,
                  max_batch_size: int = 1024 * 1024,
@@ -211,7 +213,7 @@ class CloudWatchLogHandler(logging.Handler):
             warnings.warn("Please use log_group_name instead of log_group", DeprecationWarning)
             self.log_group_name = log_group
         if stream_name is not None:
-            if log_stream_name != "{machine_name}/{program_name}/{logger_name}":
+            if log_stream_name != DEFAULT_LOG_STREAM_NAME:
                 raise WatchtowerError("Both log_stream_name and deprecated stream_name parameter specified")
             warnings.warn("Please use log_stream_name instead of stream_name", DeprecationWarning)
             self.log_stream_name = stream_name
