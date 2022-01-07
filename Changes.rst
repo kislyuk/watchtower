@@ -1,3 +1,10 @@
+Changes for v2.1.0 (2022-01-07)
+===============================
+
+-  Deconflict log streams from process pools in default log stream name
+
+-  Documentation and CI improvements
+
 Changes for v2.0.1 (2021-11-29)
 ===============================
 
