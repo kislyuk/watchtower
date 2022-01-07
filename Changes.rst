@@ -1,3 +1,8 @@
+Changes for v2.1.1 (2022-01-07)
+===============================
+
+-  Use correct default log stream name
+
 Changes for v2.1.0 (2022-01-07)
 ===============================
 
