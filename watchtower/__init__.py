@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from datetime import date, datetime
 from operator import itemgetter
-import sys, json, logging, time, threading, warnings, functools, platform
+import os, sys, json, logging, time, threading, warnings, functools, platform
 import queue
 
 import boto3
@@ -124,9 +124,9 @@ class CloudWatchLogHandler(logging.Handler):
     :param log_stream_name:
         Name of the CloudWatch log stream to write logs to. By default, a string containing the machine name, the
         program name, and the name of the logger that processed the message is used. Accepts the following format string
-        parameters: {machine_name}, {program_name}, {thread_name}, {logger_name}, and {strftime:%m-%d-%y}, where any
-        strftime string can be used to include the current UTC datetime in the stream name. The strftime format string
-        option can be used to sort logs into streams on an hourly, daily, or monthly basis.
+        parameters: {machine_name}, {program_name}, {logger_name}, {process_id}, {thread_name}, and {strftime:%m-%d-%y},
+        where any strftime string can be used to include the current UTC datetime in the stream name. The strftime
+        format string option can be used to sort logs into streams on an hourly, daily, or monthly basis.
     :param use_queues:
         If **True** (the default), logs will be queued on a per-stream basis and sent in batches. To manage the queues,
         a queue handler thread will be spawned. You can set this to False to make it easier to debug threading issues in
@@ -176,7 +176,7 @@ class CloudWatchLogHandler(logging.Handler):
 
     def __init__(self,
                  log_group_name: str = __name__,
-                 log_stream_name: str = "{machine_name}/{program_name}/{logger_name}",
+                 log_stream_name: str = "{machine_name}/{program_name}/{logger_name}/{process_id}",
                  use_queues: bool = True,
                  send_interval: int = 60,
                  max_batch_size: int = 1024 * 1024,
@@ -282,6 +282,7 @@ class CloudWatchLogHandler(logging.Handler):
         return self.log_stream_name.format(
             machine_name=self._get_machine_name(),
             program_name=sys.argv[0],
+            process_id=os.getpid(),
             thread_name=threading.current_thread().name,
             logger_name=message.name,
             strftime=datetime.utcnow()
