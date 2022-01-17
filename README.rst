@@ -271,10 +271,13 @@ botocore debug logs to print to stderr but not to Cloudwatch:
 
 Resiliency to network outages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-By default, watchtower ensures that the configured log group exists, and creates this log group if it does not. If you
+By default, watchtower ensures that the configured log group exists, and creates this log group if it does not. A failure
+to query or create the log group for any reason will cause watchtower to crash and prevent your application from starting.
+This is intended, since otherwise watchtower cannot deliver your logs. If you
 require your application to be able to start even during a network connectivity outage or a CloudWatch Logs service outage,
 consider setting the ``create_log_group`` parameter to ``False`` in the handler configuration. With this in place,
-watchtower is able to start completely offline.
+watchtower is able to start completely offline. If the configuration is otherwise correct, watchtower will resume sending
+logs when it regains a connection to the service.
 
 When your logs are ready to be sent, watchtower uses the following
 `boto3 retry configuration <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html>`_:
