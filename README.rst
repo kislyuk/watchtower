@@ -286,8 +286,8 @@ When your logs are ready to be sent, watchtower uses the following
 - 8 retry attempts with exponential backoff
 
 This means watchtower will attempt to send your log batch 8 times over the course of FIXME seconds. If all attempts fail,
-watchotwer will give up and print a warning to stderr that the log batch was lost. If you want to use a different configuration,
-you can supply one to the handler as follows:
+watchotwer will give up and print a warning to stderr that the log batch was lost. If you want to use a custom configuration
+(for example, to increase the number of retries), you can supply one to the handler as shown in the following example:
 
 .. code-block:: python
 
