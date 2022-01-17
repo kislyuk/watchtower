@@ -271,7 +271,7 @@ botocore debug logs to print to stderr but not to Cloudwatch:
 
 Resiliency to network outages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-By default, watchtower ensures that the configured log group exists, and creates this log group if it does not. A failure
+On startup, watchtower queries the configured log group, and creates it if it does not exist. A failure
 to query or create the log group for any reason will cause watchtower to crash and prevent your application from starting.
 This is intended, since otherwise watchtower cannot deliver your logs. If you
 require your application to be able to start even during a network connectivity outage or a CloudWatch Logs service outage,
