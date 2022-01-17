@@ -269,6 +269,30 @@ botocore debug logs to print to stderr but not to Cloudwatch:
     logger = logging.getLogger()
     logger.addHandler(watchtower.CloudWatchLogHandler())
 
+Resiliency to network outages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+By default, watchtower ensures that the configured log group exists, and creates this log group if it does not. If you
+require your application to be able to start even during a CloudWatch Logs outage or a network connectivity outage,
+consider setting the ``create_log_group`` parameter to ``False`` in the handler configuration. With this in place,
+watchtower is able to start completely offline.
+
+When your logs are ready to be sent, watchtower uses the following
+`boto3 retry configuration <https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html>`_:
+
+- Standard retry mode
+- 8 retry attempts with exponential backoff
+
+This means watchtower will attempt to send your log batch 8 times over the course of FIXME seconds. If all attempts fail,
+watchotwer will give up and print a warning to stderr that the log batch was lost. If you want to use a different configuration,
+you can supply one to the handler as follows::
+
+    watchtower.CloudWatchLogHandler(...)
+    config=Config(
+        connect_timeout=5,
+        read_timeout=60,
+        retries={"max_attempts": 20, "mode": "standard"},
+    ),
+
 Authors
 ~~~~~~~
 * Andrey Kislyuk
