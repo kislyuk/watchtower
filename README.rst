@@ -245,9 +245,9 @@ Finally, the following shows how to load the configuration into the working appl
 Log stream naming
 ~~~~~~~~~~~~~~~~~
 For high volume logging applications that utilize process pools, it is recommended that you keep the default log stream
-name (``{machine_name}/{program_name}/{logger_name}/{process_id}``) or make it unique per process using the
-``{process_id}`` template string. Because logs must be submitted sequentially to each log stream, independent processes
-sending logs to the same log stream will encounter sequence token synchronization errors and spend extra resources
+name (``{machine_name}/{program_name}/{logger_name}/{process_id}``) or otherwise make it unique per source using a
+combination of these template variables. Because logs must be submitted sequentially to each log stream, independent
+processes sending logs to the same log stream will encounter sequence token synchronization errors and spend extra resources
 automatically recovering from them. As the number of processes increases, this overhead will grow until logs fail to
 deliver and get dropped (causing a warning on stderr). Partitioning logs into streams by source avoids this contention.
 
