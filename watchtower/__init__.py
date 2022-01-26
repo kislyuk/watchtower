@@ -13,10 +13,16 @@ DEFAULT_LOG_STREAM_NAME = "{machine_name}/{program_name}/{logger_name}/{process_
 
 def _json_serialize_default(o):
     """
-    A standard 'default' json serializer function that will serialize datetime objects as ISO format.
+    A standard 'default' json serializer function.
+
+    - Serializes datetime objects using their .isoformat() method.
+
+    - Serializes all other objects using repr().
     """
     if isinstance(o, (date, datetime)):
         return o.isoformat()
+    else:
+        return repr(o)
 
 
 def _boto_debug_filter(record):
@@ -90,7 +96,7 @@ class CloudWatchLogFormatter(logging.Formatter):
         The 'default' function to use when serializing dictionaries as JSON. See the
         `JSON module documentation <https://docs.python.org/3/library/json.html#json.dump>`_
         for more details about the 'default' parameter. By default, watchtower uses a serializer that formats datetime
-        objects into strings using the `datetime.isoformat()` method, with no other customizations.
+        objects into strings using the `datetime.isoformat()` method, and uses `repr()` to represent all other objects.
     """
     add_log_record_attrs = tuple()
 
@@ -166,7 +172,7 @@ class CloudWatchLogHandler(logging.Handler):
         The 'default' function to use when serializing dictionaries as JSON. See the
         `JSON module documentation <https://docs.python.org/3/library/json.html#json.dump>`_
         for more details about the 'default' parameter. By default, watchtower uses a serializer that formats datetime
-        objects into strings using the `datetime.isoformat()` method, with no other customizations.
+        objects into strings using the `datetime.isoformat()` method, and uses `repr()` to represent all other objects.
     :param max_message_size:
         Maximum size (in bytes) of a single message.
     """

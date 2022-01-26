@@ -307,11 +307,11 @@ class TestPyCWL(unittest.TestCase):
         handler.formatter.add_log_record_attrs = ["levelname"]
         with mock.patch("watchtower.CloudWatchLogHandler._submit_batch") as submit_batch:
             logger.critical("hello")
-            logger.critical({"msg": "hello", "metadata": {}})
+            logger.critical({"msg": "hello", "metadata": {"body": b"abc"}})
         self.assertEqual(submit_batch.call_args_list[-2].args[0][0]["message"],
                          json.dumps({"msg": "hello", "levelname": "CRITICAL"}))
         self.assertEqual(submit_batch.call_args_list[-1].args[0][0]["message"],
-                         json.dumps({"msg": "hello", "metadata": {}, "levelname": "CRITICAL"}))
+                         json.dumps({"msg": "hello", "metadata": {"body": "b'abc'"}, "levelname": "CRITICAL"}))
 
 
 if __name__ == "__main__":
