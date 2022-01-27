@@ -1,3 +1,20 @@
+Changes for v3.0.0 (2022-01-26)
+===============================
+
+-  Use repr to represent all JSON fields of unknown types by default.
+   Previously, when passing a mapping (dictionary) as a log message,
+   watchtower would replace datetime objects with their “.isoformat()”
+   string representation, and would replace all other
+   non-JSON-serializable objects with ``null``. The new behavior is to
+   use the output of repr() to represent these non-JSON-serializable
+   objects. This change may cause your logger to log more data than you
+   intended, which is why it triggers a major version bump. If you use
+   watchtower to log sensitive information or objects with large repr
+   strings, you are advised to examine your log messages to see if any
+   newly visible data should be sanitized. If you need to customize this
+   behavior, you can pass a custom JSON default serializer using the
+   ``json_serialize_default`` keyword argument.
+
 Changes for v2.1.1 (2022-01-07)
 ===============================
 
