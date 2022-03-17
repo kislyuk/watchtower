@@ -269,6 +269,17 @@ botocore debug logs to print to stderr but not to Cloudwatch:
     logger = logging.getLogger()
     logger.addHandler(watchtower.CloudWatchLogHandler())
 
+AWS Lambda
+~~~~~~~~~~
+Watchtower is not suitable or necessary for applications running on AWS Lambda. All AWS Lambda logs (i.e. all lines
+printed to stderr by the runtime in the Lambda) are automatically sent to CloudWatch Logs, into
+`log groups under the /aws/lambda/ prefix <https://console.aws.amazon.com/cloudwatch/home?#logsV2:log-groups$3FlogGroupNameFilter$3D$252Faws$252Flambda>`_.
+
+AWS Lambda `suspends (freezes) all processes in its execution environment <https://docs.aws.amazon.com/lambda/latest/dg/runtimes-context.html>`_
+once the invocation is complete and until the next invocation, if any. This means any asynchronous background
+processes and threads, including watchtower, will be suspended and inoperable, so watchtower cannot function
+correctly in this execution model.
+
 Authors
 ~~~~~~~
 * Andrey Kislyuk
