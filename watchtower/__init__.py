@@ -296,6 +296,18 @@ class CloudWatchLogHandler(logging.Handler):
             strftime=datetime.utcnow()
         )
 
+    def _size(self, msg):
+        # Calculate the byte size of a message - accounting for unicode, and extra payload size
+        return (
+            len(msg["message"].encode("utf-8")) if isinstance(msg, dict) else 1
+        ) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
+
+    def _truncate(self, msg, max_size):
+        # Truncate oversized messages by bytes, and not string length
+        warnings.warn("Log message size exceeds CWL max payload size, truncated", WatchtowerWarning)
+        msg["message"] = msg["message"].encode("utf-8")[:max_size].decode("utf-8", "ignore")
+        return msg
+
     def _submit_batch(self, batch, log_stream_name, max_retries=5):
         if len(batch) < 1:
             return
@@ -368,12 +380,16 @@ class CloudWatchLogHandler(logging.Handler):
 
             cwl_message = dict(timestamp=int(message.created * 1000), message=self.format(message))
 
+            max_message_body_size = self.max_message_size - CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
+            if self._size(cwl_message) > max_message_body_size:
+                cwl_message = self._truncate(cwl_message, max_message_body_size)
+
             if self.use_queues:
                 if stream_name not in self.queues:
                     self.queues[stream_name] = queue.Queue()
                     thread = threading.Thread(target=self._dequeue_batch,
                                               args=(self.queues[stream_name], stream_name, self.send_interval,
-                                                    self.max_batch_size, self.max_batch_count, self.max_message_size))
+                                                    self.max_batch_size, self.max_batch_count))
                     self.threads.append(thread)
                     thread.daemon = True
                     thread.start()
@@ -386,36 +402,25 @@ class CloudWatchLogHandler(logging.Handler):
         except Exception:
             self.handleError(message)
 
-    def _dequeue_batch(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count, max_message_size):
+    def _dequeue_batch(self, my_queue, stream_name, send_interval, max_batch_size, max_batch_count):
         msg = None
-        max_message_body_size = max_message_size - CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
-
-        def size(_msg):
-            return (len(_msg["message"]) if isinstance(_msg, dict) else 1) + CloudWatchLogHandler.EXTRA_MSG_PAYLOAD_SIZE
-
-        def truncate(_msg2):
-            warnings.warn("Log message size exceeds CWL max payload size, truncated", WatchtowerWarning)
-            _msg2["message"] = _msg2["message"][:max_message_body_size]
-            return _msg2
 
         # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
         while msg != self.END:
             cur_batch = [] if msg is None or msg == self.FLUSH else [msg]
-            cur_batch_size = sum(map(size, cur_batch))
+            cur_batch_size = sum(map(self._size, cur_batch))
             cur_batch_msg_count = len(cur_batch)
             cur_batch_deadline = time.time() + send_interval
             while True:
                 try:
                     msg = my_queue.get(block=True, timeout=max(0, cur_batch_deadline - time.time()))
-                    if size(msg) > max_message_body_size:
-                        msg = truncate(msg)
                 except queue.Empty:
                     # If the queue is empty, we don't want to reprocess the previous message
                     msg = None
                 if msg is None \
                    or msg == self.END \
                    or msg == self.FLUSH \
-                   or cur_batch_size + size(msg) > max_batch_size \
+                   or cur_batch_size + self._size(msg) > max_batch_size \
                    or cur_batch_msg_count >= max_batch_count \
                    or time.time() >= cur_batch_deadline:
                     self._submit_batch(cur_batch, stream_name)
@@ -424,7 +429,7 @@ class CloudWatchLogHandler(logging.Handler):
                         my_queue.task_done()
                     break
                 elif msg:
-                    cur_batch_size += size(msg)
+                    cur_batch_size += self._size(msg)
                     cur_batch_msg_count += 1
                     cur_batch.append(msg)
                     my_queue.task_done()
