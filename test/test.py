@@ -205,8 +205,8 @@ class TestPyCWL(unittest.TestCase):
         log_group = "py_watchtower_test"
         log_stream = str(uuid.uuid4())
         config_dict = self._make_dict_config(
-            log_group=log_group,
-            stream_name=log_stream,
+            log_group_name=log_group,
+            log_stream_name=log_stream,
             use_queues=False,
         )
         logging.config.dictConfig(config_dict)
@@ -244,8 +244,8 @@ class TestPyCWL(unittest.TestCase):
         log_stream = "existing_" + str(uuid.uuid4())
         logs = boto3.client("logs")
         config_dict = self._make_dict_config(
-            log_group=log_group,
-            stream_name=log_stream,
+            log_group_name=log_group,
+            log_stream_name=log_stream,
             use_queues=False,
         )
         logging.config.dictConfig(config_dict)
