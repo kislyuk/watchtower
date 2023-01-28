@@ -313,6 +313,20 @@ class TestPyCWL(unittest.TestCase):
         self.assertEqual(submit_batch.call_args_list[-1].args[0][0]["message"],
                          json.dumps({"msg": "hello", "metadata": {"body": "b'abc'"}, "levelname": "CRITICAL"}))
 
+    def test_unicode_logging(self):
+        handler = CloudWatchLogHandler()
+        logger = logging.getLogger("test_unicode")
+        logger.addHandler(handler)
+
+        # 2 byte unicode character, we test with messages above the single message size limit for truncation, and check
+        # the total batches submitted. 5 messages of ~256kB has to be split into 2 batches.
+        with mock.patch("watchtower.CloudWatchLogHandler._submit_batch") as submit_batch:
+            for _ in range(5):
+                logger.critical("€" * 1024 * 129)  # intentionally 129 (not 128!)
+            handler.flush()
+
+        self.assertEqual(submit_batch.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
