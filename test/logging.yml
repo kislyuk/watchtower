@@ -10,8 +10,8 @@ handlers:
         formatter: json
         level: DEBUG
         (): watchtower.CloudWatchLogHandler
-        log_group: logger
-        stream_name:  loggable
+        log_group_name: logger
+        log_stream_name:  loggable
 loggers:
     root:
         handlers: [watchtower]
