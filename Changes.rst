@@ -1,3 +1,10 @@
+Changes for v3.0.1 (2023-01-29)
+===============================
+
+-  Truncate messages based on bytes, not unicode characters (#181)
+
+-  Test suite improvements (#180, #182)
+
 Changes for v3.0.0 (2022-01-26)
 ===============================
 
