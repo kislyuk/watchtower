@@ -113,7 +113,7 @@ class CloudWatchLogFormatter(logging.Formatter):
     def __init__(
         self,
         *args,
-        json_serialize_default: Callable = None,
+        json_serialize_default: Optional[Callable] = None,
         add_log_record_attrs: Optional[Tuple[str]] = None,
         **kwargs,
     ):
@@ -208,10 +208,10 @@ class CloudWatchLogHandler(logging.Handler):
         max_batch_size: int = 1024 * 1024,
         max_batch_count: int = 10000,
         boto3_client: botocore.client.BaseClient = None,
-        boto3_profile_name: str = None,
+        boto3_profile_name: Optional[str] = None,
         create_log_group: bool = True,
-        json_serialize_default: Callable = None,
-        log_group_retention_days: int = None,
+        json_serialize_default: Optional[Callable] = None,
+        log_group_retention_days: Optional[int] = None,
         create_log_stream: bool = True,
         max_message_size: int = 256 * 1024,
         log_group=None,

@@ -26,6 +26,10 @@ setup(
         ]
     },
     packages=find_packages(exclude=["test"]),
+    include_package_data=True,
+    package_data={
+        "watchtower": ["py.typed"],
+    },
     platforms=["MacOS X", "Posix"],
     include_package_data=True,
     classifiers=[
