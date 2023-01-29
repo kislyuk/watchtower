@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
-
-from unittest import mock
+import json
 import logging
 import logging.config
 import os
 import os.path
+import subprocess
 import sys
-import json
 import tempfile
 import time
 import unittest
-import subprocess
 import uuid
+from datetime import datetime
+from unittest import mock
 
 import boto3
 import botocore.configloader
 import yaml
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from watchtower import CloudWatchLogHandler, WatchtowerWarning  # noqa: E402
 
@@ -27,8 +26,8 @@ from watchtower import CloudWatchLogHandler, WatchtowerWarning  # noqa: E402
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
         self.test_path = os.path.dirname(__file__)
-        self.log_config_yaml_basic = '{}/logging.yml'.format(self.test_path)
-        self.log_config_yaml_profile = '{}/logging_profile.yml'.format(self.test_path)
+        self.log_config_yaml_basic = "{}/logging.yml".format(self.test_path)
+        self.log_config_yaml_profile = "{}/logging_profile.yml".format(self.test_path)
 
     @staticmethod
     def _make_dict_config(**handler_props):
@@ -94,6 +93,7 @@ class TestPyCWL(unittest.TestCase):
             for logger in loggers:
                 logger.error("test")
         import time
+
         time.sleep(1)
         for i in range(9000):
             for logger in loggers:
@@ -140,7 +140,7 @@ class TestPyCWL(unittest.TestCase):
             config_yml = yaml_input.read()
             config_dict = yaml.load(config_yml, Loader=yaml.SafeLoader)
             logging.config.dictConfig(config_dict)
-            logger = logging.getLogger('root')
+            logger = logging.getLogger("root")
             for i in range(10):
                 logger.critical(dict(src="foo2", event=str(i), stack=[1, 2, 3, i], details={}))
 
@@ -151,54 +151,41 @@ class TestPyCWL(unittest.TestCase):
 
         # save the known configuration values from the ENV vars to a configuration file
         aws_config = tempfile.NamedTemporaryFile()
-        with open(aws_config.name, 'w') as boto3_config_file:
-            boto3_config_file.write('[profile watchtowerlogger]\n')
-            boto3_config_file.write(
-                'aws_access_key_id={}\n'.format(
-                    boto3.Session().get_credentials().access_key
-                )
-            )
-            boto3_config_file.write(
-                'aws_secret_access_key={}\n'.format(
-                    boto3.Session().get_credentials().secret_key
-                )
-            )
-            boto3_config_file.write(
-                'region={}\n'.format(
-                    boto3.Session().region_name
-                )
-            )
+        with open(aws_config.name, "w") as boto3_config_file:
+            boto3_config_file.write("[profile watchtowerlogger]\n")
+            boto3_config_file.write("aws_access_key_id={}\n".format(boto3.Session().get_credentials().access_key))
+            boto3_config_file.write("aws_secret_access_key={}\n".format(boto3.Session().get_credentials().secret_key))
+            boto3_config_file.write("region={}\n".format(boto3.Session().region_name))
 
         # load them in order to have the same data format
         config_data = botocore.configloader.load_config(aws_config.name)
         # now mock out the botocore configuration loader in order to guarantee
         # the correct data is loaded
-        with mock.patch('botocore.configloader.load_config') as boto_config:
+        with mock.patch("botocore.configloader.load_config") as boto_config:
             boto_config.return_value = config_data
 
             with open(self.log_config_yaml_profile) as yaml_input:
                 config_yml = yaml_input.read()
                 config_dict = yaml.load(config_yml, Loader=yaml.SafeLoader)
                 logging.config.dictConfig(config_dict)
-                logger = logging.getLogger('root')
+                logger = logging.getLogger("root")
                 for i in range(10):
                     logger.critical(dict(src="foo3", event=str(i), stack=[1, 2, 3, i], details={}))
                 boto_config.assert_called()
 
     def test_terminating_process(self):
         cwd = os.path.dirname(__file__)
-        subprocess.run([sys.executable, 'run_logging.py'], cwd=cwd, timeout=10, check=True)
+        subprocess.run([sys.executable, "run_logging.py"], cwd=cwd, timeout=10, check=True)
 
     def test_empty_message(self):
         handler = CloudWatchLogHandler(use_queues=False)
         logger = logging.getLogger("empty")
         logger.addHandler(handler)
-        for args in [("",), ("%s", '')]:
+        for args in [("",), ("%s", "")]:
             with self.assertWarns(WatchtowerWarning) as cm:
                 logger.critical(*args)
             self.assertEqual(
-                str(cm.warning),
-                "Received empty message. Empty messages cannot be sent to CloudWatch Logs"
+                str(cm.warning), "Received empty message. Empty messages cannot be sent to CloudWatch Logs"
             )
 
     def test_create_log_stream_on_emit(self):
@@ -229,15 +216,13 @@ class TestPyCWL(unittest.TestCase):
         create_log_stream_mock.assert_not_called()
 
         # Delete the log stream, the next write should re-create it
-        logs.delete_log_stream(logGroupName=log_group,
-                               logStreamName=log_stream)
+        logs.delete_log_stream(logGroupName=log_group, logStreamName=log_stream)
         self._wait_for_log_stream_to_delete(log_group, log_stream)
 
         # log and wait for new message to the log stream
         second_create_msg = "This msg should re-create the log stream"
         logger.error(second_create_msg)
-        self._wait_for_message(second_create_msg, log_group,
-                               log_stream, retries=15)
+        self._wait_for_message(second_create_msg, log_group, log_stream, retries=15)
 
     def test_existing_log_stream_does_not_create_log_stream(self):
         log_group = "py_watchtower_test"
@@ -253,6 +238,7 @@ class TestPyCWL(unittest.TestCase):
 
         class h:
             cwl_client = logs
+
         CloudWatchLogHandler._idempotent_call(h, "create_log_stream", logGroupName=log_group, logStreamName=log_stream)
         self.addCleanup(
             logs.delete_log_stream,
@@ -308,15 +294,19 @@ class TestPyCWL(unittest.TestCase):
         with mock.patch("watchtower.CloudWatchLogHandler._submit_batch") as submit_batch:
             logger.critical("hello")
             logger.critical({"msg": "hello", "metadata": {"body": b"abc"}})
-        self.assertEqual(submit_batch.call_args_list[-2].args[0][0]["message"],
-                         json.dumps({"msg": "hello", "levelname": "CRITICAL"}))
-        self.assertEqual(submit_batch.call_args_list[-1].args[0][0]["message"],
-                         json.dumps({"msg": "hello", "metadata": {"body": "b'abc'"}, "levelname": "CRITICAL"}))
+        self.assertEqual(
+            submit_batch.call_args_list[-2].args[0][0]["message"], json.dumps({"msg": "hello", "levelname": "CRITICAL"})
+        )
+        self.assertEqual(
+            submit_batch.call_args_list[-1].args[0][0]["message"],
+            json.dumps({"msg": "hello", "metadata": {"body": "b'abc'"}, "levelname": "CRITICAL"}),
+        )
 
     def test_unicode_logging(self):
         handler = CloudWatchLogHandler()
         logger = logging.getLogger("test_unicode")
         logger.addHandler(handler)
+        logger.propagate = False
 
         # 2 byte unicode character, we test with messages above the single message size limit for truncation, and check
         # the total batches submitted. 5 messages of ~256kB has to be split into 2 batches.

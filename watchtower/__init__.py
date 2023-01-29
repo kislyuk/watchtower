@@ -1,8 +1,17 @@
+import functools
+import json
+import logging
+import os
+import platform
+import queue
+import sys
+import threading
+import time
+import warnings
 from collections.abc import Mapping
 from datetime import date, datetime
 from operator import itemgetter
-import os, sys, json, logging, time, threading, warnings, functools, platform
-import queue
+from typing import Any, Callable, List, Optional, Tuple
 
 import boto3
 import botocore
@@ -98,9 +107,16 @@ class CloudWatchLogFormatter(logging.Formatter):
         for more details about the 'default' parameter. By default, watchtower uses a serializer that formats datetime
         objects into strings using the `datetime.isoformat()` method, and uses `repr()` to represent all other objects.
     """
-    add_log_record_attrs = tuple()
 
-    def __init__(self, *args, json_serialize_default: callable = None, add_log_record_attrs: tuple = None, **kwargs):
+    add_log_record_attrs: Tuple = tuple()
+
+    def __init__(
+        self,
+        *args,
+        json_serialize_default: Optional[Callable] = None,
+        add_log_record_attrs: Optional[Tuple[str]] = None,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.json_serialize_default = _json_serialize_default
         if json_serialize_default is not None:
@@ -113,7 +129,7 @@ class CloudWatchLogFormatter(logging.Formatter):
             msg = message.msg if isinstance(message.msg, Mapping) else {"msg": message.msg}
             for field in self.add_log_record_attrs:
                 if field != "msg":
-                    msg[field] = getattr(message, field)
+                    msg[field] = getattr(message, field)  # type: ignore
             message.msg = msg
         if isinstance(message.msg, Mapping):
             return json.dumps(message.msg, default=self.json_serialize_default)
@@ -176,30 +192,33 @@ class CloudWatchLogHandler(logging.Handler):
     :param max_message_size:
         Maximum size (in bytes) of a single message.
     """
+
     END = 1
     FLUSH = 2
 
     # extra size of meta information with each messages
     EXTRA_MSG_PAYLOAD_SIZE = 26
 
-    def __init__(self,
-                 log_group_name: str = __name__,
-                 log_stream_name: str = DEFAULT_LOG_STREAM_NAME,
-                 use_queues: bool = True,
-                 send_interval: int = 60,
-                 max_batch_size: int = 1024 * 1024,
-                 max_batch_count: int = 10000,
-                 boto3_client: botocore.client.BaseClient = None,
-                 boto3_profile_name: str = None,
-                 create_log_group: bool = True,
-                 json_serialize_default: callable = None,
-                 log_group_retention_days: int = None,
-                 create_log_stream: bool = True,
-                 max_message_size: int = 256 * 1024,
-                 log_group=None,
-                 stream_name=None,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        log_group_name: str = __name__,
+        log_stream_name: str = DEFAULT_LOG_STREAM_NAME,
+        use_queues: bool = True,
+        send_interval: int = 60,
+        max_batch_size: int = 1024 * 1024,
+        max_batch_count: int = 10000,
+        boto3_client: botocore.client.BaseClient = None,
+        boto3_profile_name: Optional[str] = None,
+        create_log_group: bool = True,
+        json_serialize_default: Optional[Callable] = None,
+        log_group_retention_days: Optional[int] = None,
+        create_log_stream: bool = True,
+        max_message_size: int = 256 * 1024,
+        log_group=None,
+        stream_name=None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.log_group_name = log_group_name
         self.log_stream_name = log_stream_name
@@ -242,15 +261,15 @@ class CloudWatchLogHandler(logging.Handler):
             self._ensure_log_group()
 
         if log_group_retention_days:
-            self._idempotent_call("put_retention_policy",
-                                  logGroupName=self.log_group_name,
-                                  retentionInDays=self.log_group_retention_days)
+            self._idempotent_call(
+                "put_retention_policy", logGroupName=self.log_group_name, retentionInDays=self.log_group_retention_days
+            )
 
     def _at_fork_reinit(self):
         # This was added in Python 3.9 and should only be called with a recent
         # version of Python. An older version will attempt to call createLock
         # instead.
-        super()._at_fork_reinit()
+        super()._at_fork_reinit()  # type: ignore
         self._init_state()
 
     def _init_state(self):
@@ -278,8 +297,10 @@ class CloudWatchLogHandler(logging.Handler):
         method_callable = getattr(self.cwl_client, method)
         try:
             method_callable(*args, **kwargs)
-        except (self.cwl_client.exceptions.OperationAbortedException,
-                self.cwl_client.exceptions.ResourceAlreadyExistsException):
+        except (
+            self.cwl_client.exceptions.OperationAbortedException,
+            self.cwl_client.exceptions.ResourceAlreadyExistsException,
+        ):
             pass
 
     @functools.lru_cache(maxsize=0)
@@ -293,7 +314,7 @@ class CloudWatchLogHandler(logging.Handler):
             process_id=os.getpid(),
             thread_name=threading.current_thread().name,
             logger_name=message.name,
-            strftime=datetime.utcnow()
+            strftime=datetime.utcnow(),
         )
 
     def _size(self, msg):
@@ -311,9 +332,8 @@ class CloudWatchLogHandler(logging.Handler):
     def _submit_batch(self, batch, log_stream_name, max_retries=5):
         if len(batch) < 1:
             return
-        sorted_batch = sorted(batch, key=itemgetter('timestamp'), reverse=False)
-        kwargs = dict(logGroupName=self.log_group_name, logStreamName=log_stream_name,
-                      logEvents=sorted_batch)
+        sorted_batch = sorted(batch, key=itemgetter("timestamp"), reverse=False)
+        kwargs = dict(logGroupName=self.log_group_name, logStreamName=log_stream_name, logEvents=sorted_batch)
         if self.sequence_tokens[log_stream_name] is not None:
             kwargs["sequenceToken"] = self.sequence_tokens[log_stream_name]
         response = None
@@ -323,8 +343,13 @@ class CloudWatchLogHandler(logging.Handler):
                 response = self.cwl_client.put_log_events(**kwargs)
                 break
             except ClientError as e:
-                if isinstance(e, (self.cwl_client.exceptions.DataAlreadyAcceptedException,
-                                  self.cwl_client.exceptions.InvalidSequenceTokenException)):
+                if isinstance(
+                    e,
+                    (
+                        self.cwl_client.exceptions.DataAlreadyAcceptedException,
+                        self.cwl_client.exceptions.InvalidSequenceTokenException,
+                    ),
+                ):
                     next_expected_token = e.response["Error"]["Message"].rsplit(" ", 1)[-1]
                     # null as the next sequenceToken means don't include any
                     # sequenceToken at all, not that the token should be set to "null"
@@ -336,9 +361,9 @@ class CloudWatchLogHandler(logging.Handler):
                     if self.create_log_stream:
                         self.creating_log_stream = True
                         try:
-                            self._idempotent_call("create_log_stream",
-                                                  logGroupName=self.log_group_name,
-                                                  logStreamName=log_stream_name)
+                            self._idempotent_call(
+                                "create_log_stream", logGroupName=self.log_group_name, logStreamName=log_stream_name
+                            )
                             # We now have a new stream name and the next retry
                             # will be the first attempt to log to it, so we
                             # should not continue to use the old sequence token
@@ -387,9 +412,16 @@ class CloudWatchLogHandler(logging.Handler):
             if self.use_queues:
                 if stream_name not in self.queues:
                     self.queues[stream_name] = queue.Queue()
-                    thread = threading.Thread(target=self._dequeue_batch,
-                                              args=(self.queues[stream_name], stream_name, self.send_interval,
-                                                    self.max_batch_size, self.max_batch_count))
+                    thread = threading.Thread(
+                        target=self._dequeue_batch,
+                        args=(
+                            self.queues[stream_name],
+                            stream_name,
+                            self.send_interval,
+                            self.max_batch_size,
+                            self.max_batch_count,
+                        ),
+                    )
                     self.threads.append(thread)
                     thread.daemon = True
                     thread.start()
@@ -407,7 +439,7 @@ class CloudWatchLogHandler(logging.Handler):
 
         # See https://boto3.readthedocs.io/en/latest/reference/services/logs.html#CloudWatchLogs.Client.put_log_events
         while msg != self.END:
-            cur_batch = [] if msg is None or msg == self.FLUSH else [msg]
+            cur_batch: List[Any] = [] if msg is None or msg == self.FLUSH else [msg]
             cur_batch_size = sum(map(self._size, cur_batch))
             cur_batch_msg_count = len(cur_batch)
             cur_batch_deadline = time.time() + send_interval
@@ -417,12 +449,14 @@ class CloudWatchLogHandler(logging.Handler):
                 except queue.Empty:
                     # If the queue is empty, we don't want to reprocess the previous message
                     msg = None
-                if msg is None \
-                   or msg == self.END \
-                   or msg == self.FLUSH \
-                   or cur_batch_size + self._size(msg) > max_batch_size \
-                   or cur_batch_msg_count >= max_batch_count \
-                   or time.time() >= cur_batch_deadline:
+                if (
+                    msg is None
+                    or msg == self.END
+                    or msg == self.FLUSH
+                    or cur_batch_size + self._size(msg) > max_batch_size
+                    or cur_batch_msg_count >= max_batch_count
+                    or time.time() >= cur_batch_deadline
+                ):
                     self._submit_batch(cur_batch, stream_name)
                     if msg is not None:
                         # We don't want to call task_done if the queue was empty and we didn't receive anything new
