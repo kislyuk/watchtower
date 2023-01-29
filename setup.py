@@ -31,7 +31,6 @@ setup(
         "watchtower": ["py.typed"],
     },
     platforms=["MacOS X", "Posix"],
-    include_package_data=True,
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
