@@ -1,23 +1,24 @@
-test_deps:
-	pip install .[tests]
+SHELL=/bin/bash
 
-lint: test_deps
-	flake8 $$(python setup.py --name)
+lint:
+	flake8
+	mypy --install-types --non-interactive --check-untyped-defs $$(dirname */__init__.py)
 
-test: test_deps lint
-	coverage run --source=$$(python setup.py --name) ./test/test.py -v
+test:
+	python ./test/test.py -v
+
+init_docs:
+	cd docs; sphinx-quickstart
 
 docs:
 	sphinx-build docs docs/html
 
-install: clean
-	python -m build .
-	pip install --upgrade dist/*.whl
+install:
+	-rm -rf dist
+	python -m pip install build
+	python -m build
+	python -m pip install --upgrade $$(echo dist/*.whl)[tests]
 
-clean:
-	-rm -rf build dist
-	-rm -rf *.egg-info
-
-.PHONY: test release docs lint test_deps
+.PHONY: test lint release docs
 
 include common.mk
