@@ -178,6 +178,10 @@ class CloudWatchLogHandler(logging.Handler):
         Name of the boto3 configuration profile to use. This option is provided for situations where the logger should
         use a different AWS client configuration from the rest of the system, but declarative configuration via a static
         dictionary or config file is desired.
+    :param boto3_endpoint_url:
+        URL of the boto3 endpoint to use. This option is provided for situations where the logger should
+        use a different AWS endpoint configuration from the rest of the system, but declarative configuration via a static
+        dictionary or config file is desired.
     :param create_log_group:
         Create CloudWatch Logs log group if it does not exist.  **True** by default.
     :param log_group_retention_days:
@@ -209,6 +213,7 @@ class CloudWatchLogHandler(logging.Handler):
         max_batch_count: int = 10000,
         boto3_client: botocore.client.BaseClient = None,
         boto3_profile_name: Optional[str] = None,
+        boto3_endpoint_url: Optional[str] = None,
         create_log_group: bool = True,
         json_serialize_default: Optional[Callable] = None,
         log_group_retention_days: Optional[int] = None,
@@ -249,11 +254,15 @@ class CloudWatchLogHandler(logging.Handler):
         # Creating the client should be the final call in __init__, after all instance attributes are set.
         # This ensures that failing to create the session will not result in any missing attribtues.
         if boto3_client is None and boto3_profile_name is None:
-            self.cwl_client = boto3.client("logs")
+            self.cwl_client = boto3.client("logs", endpoint_url=boto3_endpoint_url)
         elif boto3_client is not None and boto3_profile_name is None:
+            if boto3_endpoint_url is not None:
+                raise WatchtowerError("boto3_endpoint_url cannot be specified when boto3_client is specified")
             self.cwl_client = boto3_client
         elif boto3_client is None and boto3_profile_name is not None:
-            self.cwl_client = boto3.session.Session(profile_name=boto3_profile_name).client("logs")
+            self.cwl_client = (
+                boto3.session.Session(profile_name=boto3_profile_name).client("logs", endpoint_url=boto3_endpoint_url)
+            )
         else:
             raise WatchtowerError("Either boto3_client or boto3_profile_name can be specified, but not both")
 
