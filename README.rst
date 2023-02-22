@@ -169,27 +169,19 @@ configuration provided by ``boto3``:
     # Default AWS Config
     version: 1
     disable_existing_loggers: False
-    formatters:
-      json:
-        format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
-      plaintext:
-        format: "[%(asctime)s] %(process)d %(levelname)s %(name)s:%(funcName)s:%(lineno)s - %(message)s"
     handlers:
       console:
         class: logging.StreamHandler
-        formatter: plaintext
         level: DEBUG
         stream: ext://sys.stdout
       logfile:
         class: logging.handlers.RotatingFileHandler
-        formatter: plaintext
         level: DEBUG
         filename: watchtower.log
         maxBytes: 1000000
         backupCount: 3
       watchtower:
         class: watchtower.CloudWatchLogHandler
-        formatter: json
         level: DEBUG
         log_group_name: watchtower
         log_stream_name: "{logger_name}-{strftime:%y-%m-%d}"
