@@ -7,12 +7,10 @@ API documentation
    :members:
 
 
-Table of Contents
-=================
+Change log
+==========
 
 .. toctree::
    :maxdepth: 5
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   changelog
