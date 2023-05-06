@@ -8,6 +8,7 @@ test:
 	python ./test/test.py -v
 
 init_docs:
+	python -m pip install furo sphinx-copybutton
 	cd docs; sphinx-quickstart
 
 docs:
