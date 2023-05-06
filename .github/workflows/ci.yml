@@ -1,4 +1,4 @@
-name: Test suite
+name: CI
 
 on: [push, pull_request]
 

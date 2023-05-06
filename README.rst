@@ -299,7 +299,7 @@ License
 ~~~~~~~
 Licensed under the terms of the `Apache License, Version 2.0 <http://www.apache.org/licenses/LICENSE-2.0>`_.
 
-.. image:: https://github.com/kislyuk/watchtower/workflows/Python%20package/badge.svg
+.. image:: https://github.com/kislyuk/watchtower/workflows/CI/badge.svg
         :target: https://github.com/kislyuk/watchtower/actions
 .. image:: https://codecov.io/github/kislyuk/watchtower/coverage.svg?branch=master
         :target: https://codecov.io/github/kislyuk/watchtower?branch=master
