@@ -18,7 +18,7 @@ setup(
     extras_require={
         "tests": [
             "pyyaml",
-            "flake8",
+            "ruff",
             "coverage",
             "build",
             "wheel",
