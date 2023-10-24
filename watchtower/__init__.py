@@ -370,6 +370,13 @@ class CloudWatchLogHandler(logging.Handler):
                             # at this point, the first write to the new stream
                             # should not contain a sequence token at all.
                             kwargs.pop("sequenceToken", None)
+                        except Exception as e2:
+                            # Make sure exception in CreateLogStream not exit
+                            # this thread but conitnue to retry
+                            warnings.warn(
+                                "Failed to create log stream {} when delivering log: {}".format(log_stream_name, e2),
+                                WatchtowerWarning,
+                            )
                         finally:
                             self.creating_log_stream = False
                 else:
