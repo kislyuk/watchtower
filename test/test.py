@@ -26,8 +26,8 @@ from watchtower import CloudWatchLogHandler, WatchtowerWarning  # noqa: E402
 class TestPyCWL(unittest.TestCase):
     def setUp(self):
         self.test_path = os.path.dirname(__file__)
-        self.log_config_yaml_basic = "{}/logging.yml".format(self.test_path)
-        self.log_config_yaml_profile = "{}/logging_profile.yml".format(self.test_path)
+        self.log_config_yaml_basic = f"{self.test_path}/logging.yml"
+        self.log_config_yaml_profile = f"{self.test_path}/logging_profile.yml"
 
     @staticmethod
     def _make_dict_config(**handler_props):
@@ -79,13 +79,13 @@ class TestPyCWL(unittest.TestCase):
             retries -= 1
             time.sleep(0.5)
         else:
-            self.fail("Couldn't find message: {} in log stream: {}".format(message, log_stream))
+            self.fail(f"Couldn't find message: {message} in log stream: {log_stream}")
 
     def test_basic_pycwl_statements(self):
         h = CloudWatchLogHandler()
         loggers = []
         for i in range(5):
-            logger = logging.getLogger("logger{}".format(i))
+            logger = logging.getLogger(f"logger{i}")
             logger.addHandler(h)
             # logger.addHandler(CloudWatchLogHandler(use_queues=False))
             loggers.append(logger)
@@ -144,7 +144,7 @@ class TestPyCWL(unittest.TestCase):
             for i in range(10):
                 logger.critical(dict(src="foo2", event=str(i), stack=[1, 2, 3, i], details={}))
 
-    @unittest.skipIf(sys.version_info < (3, 6), "")
+    @unittest.skip("FIXME: fix broken test that writes secrets to files and breaks when using IAM roles")
     def test_logconfig_dictconfig_profile(self):
         # NOTE: The below is a bit of a hack to get around how Travis CI works so that it
         #   can be fully tested remotely too.
@@ -153,9 +153,9 @@ class TestPyCWL(unittest.TestCase):
         aws_config = tempfile.NamedTemporaryFile()
         with open(aws_config.name, "w") as boto3_config_file:
             boto3_config_file.write("[profile watchtowerlogger]\n")
-            boto3_config_file.write("aws_access_key_id={}\n".format(boto3.Session().get_credentials().access_key))
-            boto3_config_file.write("aws_secret_access_key={}\n".format(boto3.Session().get_credentials().secret_key))
-            boto3_config_file.write("region={}\n".format(boto3.Session().region_name))
+            boto3_config_file.write(f"aws_access_key_id={boto3.Session().get_credentials().access_key}\n")
+            boto3_config_file.write(f"aws_secret_access_key={boto3.Session().get_credentials().secret_key}\n")
+            boto3_config_file.write(f"region={boto3.Session().region_name}\n")
 
         # load them in order to have the same data format
         config_data = botocore.configloader.load_config(aws_config.name)

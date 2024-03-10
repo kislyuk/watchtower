@@ -370,23 +370,23 @@ class CloudWatchLogHandler(logging.Handler):
                             # at this point, the first write to the new stream
                             # should not contain a sequence token at all.
                             kwargs.pop("sequenceToken", None)
-                        except Exception as e2:
+                        except ClientError as e2:
                             # Make sure exception in CreateLogStream not exit
                             # this thread but conitnue to retry
                             warnings.warn(
-                                "Failed to create log stream {} when delivering log: {}".format(log_stream_name, e2),
+                                f"Failed to create log stream {log_stream_name} when delivering logs: {e2}",
                                 WatchtowerWarning,
                             )
                         finally:
                             self.creating_log_stream = False
                 else:
-                    warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
+                    warnings.warn(f"Failed to deliver logs: {e}", WatchtowerWarning)
             except Exception as e:
-                warnings.warn("Failed to deliver logs: {}".format(e), WatchtowerWarning)
+                warnings.warn(f"Failed to deliver logs: {e}", WatchtowerWarning)
 
         # response can be None only when all retries have been exhausted
         if response is None or "rejectedLogEventsInfo" in response:
-            warnings.warn("Failed to deliver logs: {}".format(response), WatchtowerWarning)
+            warnings.warn(f"Failed to deliver logs: {response}", WatchtowerWarning)
         elif "nextSequenceToken" in response:
             # According to https://github.com/kislyuk/watchtower/issues/134, nextSequenceToken may sometimes be absent
             # from the response
