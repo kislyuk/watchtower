@@ -9,7 +9,7 @@ import threading
 import time
 import warnings
 from collections.abc import Mapping
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from operator import itemgetter
 from typing import Any, Callable, List, Optional, Tuple
 
@@ -314,7 +314,7 @@ class CloudWatchLogHandler(logging.Handler):
             process_id=os.getpid(),
             thread_name=threading.current_thread().name,
             logger_name=message.name,
-            strftime=datetime.utcnow(),
+            strftime=datetime.now(timezone.utc),
         )
 
     def _size(self, msg):
