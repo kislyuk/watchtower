@@ -1,3 +1,11 @@
+Changes for v3.1.0 (2024-03-10)
+===============================
+
+-  Avoid crashing flush() when CreateLogStream API call is throttled
+   (#192)
+
+-  Replace deprecated function datatime.utcnow() (#196)
+
 Changes for v3.0.1 (2023-01-29)
 ===============================
 
