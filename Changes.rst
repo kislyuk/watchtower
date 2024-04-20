@@ -1,3 +1,8 @@
+Changes for v3.2.0 (2024-04-19)
+===============================
+
+-  Use timeout when waiting for queues to empty at shutdown
+
 Changes for v3.1.0 (2024-03-10)
 ===============================
 
