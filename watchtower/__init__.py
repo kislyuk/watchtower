@@ -195,6 +195,7 @@ class CloudWatchLogHandler(logging.Handler):
 
     END = 1
     FLUSH = 2
+    FLUSH_TIMEOUT = 30
 
     # extra size of meta information with each messages
     EXTRA_MSG_PAYLOAD_SIZE = 26
@@ -479,21 +480,22 @@ class CloudWatchLogHandler(logging.Handler):
         """
         Send any queued messages to CloudWatch. This method does nothing if ``use_queues`` is set to False.
         """
-        # fixme: don't add filter if it's already installed
+        # FIXME: don't add filter if it's already installed
         self.addFilter(_boto_filter)
         if self.shutting_down:
             return
         for q in self.queues.values():
             q.put(self.FLUSH)
         for q in self.queues.values():
-            q.join()
+            with q.all_tasks_done:
+                q.all_tasks_done.wait_for(lambda: q.unfinished_tasks == 0, timeout=self.FLUSH_TIMEOUT)
 
     def close(self):
         """
         Send any queued messages to CloudWatch and prevent further processing of messages.
         This method does nothing if ``use_queues`` is set to False.
         """
-        # fixme: don't add filter if it's already installed
+        # FIXME: don't add filter if it's already installed
         self.addFilter(_boto_filter)
         # Avoid waiting on the queue again when the close called twice.
         # Otherwise the second call, as no thread is running, it will hang
@@ -504,7 +506,10 @@ class CloudWatchLogHandler(logging.Handler):
         for q in self.queues.values():
             q.put(self.END)
         for q in self.queues.values():
-            q.join()
+            with q.all_tasks_done:
+                q.all_tasks_done.wait_for(lambda: q.unfinished_tasks == 0, timeout=self.FLUSH_TIMEOUT)
+            if not q.empty():
+                warnings.warn("Timed out while delivering logs", WatchtowerWarning)
         super().close()
 
     def __repr__(self):
