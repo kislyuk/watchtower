@@ -211,6 +211,7 @@ class CloudWatchLogHandler(logging.Handler):
         boto3_client: botocore.client.BaseClient = None,
         boto3_profile_name: Optional[str] = None,
         create_log_group: bool = True,
+        log_group_tags: dict[str, str] = {},
         json_serialize_default: Optional[Callable] = None,
         log_group_retention_days: Optional[int] = None,
         create_log_stream: bool = True,
@@ -261,6 +262,9 @@ class CloudWatchLogHandler(logging.Handler):
         if create_log_group:
             self._ensure_log_group()
 
+        if len(log_group_tags) > 0:
+            self._tag_log_group(log_group_tags)
+
         if log_group_retention_days:
             self._idempotent_call(
                 "put_retention_policy", logGroupName=self.log_group_name, retentionInDays=self.log_group_retention_days
@@ -293,6 +297,25 @@ class CloudWatchLogHandler(logging.Handler):
         except self.cwl_client.exceptions.ClientError:
             pass
         self._idempotent_call("create_log_group", logGroupName=self.log_group_name)
+
+    @functools.cache
+    def _get_log_group_arn(self):
+        # get the account number
+        sts_client = boto3.client("sts")
+        accountno = sts_client.get_caller_identity()["Account"]
+        region = self.cwl_client.meta.region_name
+        return f"arn:aws:logs:{region}:{accountno}:log-group:{self.log_group_name}"
+
+    def _tag_log_group(self, log_group_tags: dict[str, str]):
+        try:
+            self._idempotent_call("tag_resource", resourceArn=self._get_log_group_arn(), tags=log_group_tags)
+        except (
+            self.cwl_client.exceptions.ResourceNotFoundException,
+            self.cwl_client.exceptions.InvalidParameterException,
+            self.cwl_client.exceptions.ServiceUnavailableException,
+            self.cwl_client.exceptions.TooManyTagsException,
+        ) as e:
+            warnings.warn(f"Failed to tag log group {self.log_group_name}: {e}", WatchtowerWarning)
 
     def _idempotent_call(self, method, *args, **kwargs):
         method_callable = getattr(self.cwl_client, method)
