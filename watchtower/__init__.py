@@ -182,6 +182,8 @@ class CloudWatchLogHandler(logging.Handler):
         Create CloudWatch Logs log group if it does not exist.  **True** by default.
     :param log_group_retention_days:
         Sets the retention policy of the log group in days.  **None** by default.
+    :param log_group_tags:
+        Tag the log group with the specified tags and values. There is no provision for removing tags. **{}** by default.
     :param create_log_stream:
         Create CloudWatch Logs log stream if it does not exist.  **True** by default.
     :param json_serialize_default:
