@@ -328,10 +328,6 @@ class TestPyCWL(unittest.TestCase):
         log_group_arn = handler._get_log_group_arn()
 
         logs_client = boto3.client("logs")
-        self.addCleanup(
-            logs_client.delete_log_group,
-            logGroupName="test_log_group_tagging",
-        )
 
         logger.critical("This should create a log group with tags")
 
