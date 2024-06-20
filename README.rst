@@ -49,6 +49,15 @@ role. While AWS provides no generic managed CloudWatch Logs writer policy, we re
 ``arn:aws:iam::aws:policy/AWSOpsWorksCloudWatchLogs`` managed policy, which has just the right permissions without being
 overly broad.
 
+Log Group Tagging
+~~~~~~~~~~~~~~~~~
+Watchtower supports the tagging of log groups. This can be done by adding the parameter ``log_group_tags`` to the
+``CloudWatchLogHandler`` constructor. This parameter should be a dictionary of tags to apply to the log group.
+
+If you want to add tags to the log group you will need to add permission for the ``logs:TagResource`` action to your
+policy. This will need to be in addition to the AWSOpsWorksCloudWatchLogs policy. (Note: the older ``logs:TagLogGroup``
+permission is for the ``tag_log_group()`` call which is on the path to deprecation and is not used by Watchtower.)
+
 Example: Flask logging with Watchtower
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

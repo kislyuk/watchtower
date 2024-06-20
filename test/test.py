@@ -317,6 +317,24 @@ class TestPyCWL(unittest.TestCase):
 
         self.assertEqual(submit_batch.call_count, 2)
 
+    def test_log_group_tagging(self):
+
+        tags = {"tag1": "value1", "tag2": "value2"}
+        handler = CloudWatchLogHandler(log_group_name="test_log_group_tagging",
+            log_group_tags=tags)
+        logger = logging.getLogger("test_log_group_tagging")
+        logger.addHandler(handler)
+        logger.propagate = False
+        log_group_arn = handler._get_log_group_arn()
+
+        logs_client = boto3.client("logs")
+
+        logger.critical("This should create a log group with tags")
+
+        tag_list_result = logs_client.list_tags_for_resource(resourceArn=log_group_arn)
+
+        self.assertDictEqual(tag_list_result["tags"], tags)
+
 
 if __name__ == "__main__":
     unittest.main()
