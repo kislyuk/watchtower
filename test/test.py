@@ -318,10 +318,8 @@ class TestPyCWL(unittest.TestCase):
         self.assertEqual(submit_batch.call_count, 2)
 
     def test_log_group_tagging(self):
-
         tags = {"tag1": "value1", "tag2": "value2"}
-        handler = CloudWatchLogHandler(log_group_name="test_log_group_tagging",
-            log_group_tags=tags)
+        handler = CloudWatchLogHandler(log_group_name="test_log_group_tagging", log_group_tags=tags)
         logger = logging.getLogger("test_log_group_tagging")
         logger.addHandler(handler)
         logger.propagate = False
