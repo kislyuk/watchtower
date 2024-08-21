@@ -1,3 +1,11 @@
+Changes for v3.3.1 (2024-08-20)
+===============================
+
+-  Fix type errors introduced in #201 (required to restore compatibility
+   with Python 3.8)
+
+-  Test infrastructure improvements
+
 Changes for v3.3.0 (2024-08-19)
 ===============================
 
