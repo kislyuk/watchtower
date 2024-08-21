@@ -11,7 +11,7 @@ import warnings
 from collections.abc import Mapping
 from datetime import date, datetime, timezone
 from operator import itemgetter
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import boto3
 import botocore
@@ -213,7 +213,7 @@ class CloudWatchLogHandler(logging.Handler):
         boto3_client: botocore.client.BaseClient = None,
         boto3_profile_name: Optional[str] = None,
         create_log_group: bool = True,
-        log_group_tags: dict[str, str] = {},
+        log_group_tags: Dict[str, str] = {},
         json_serialize_default: Optional[Callable] = None,
         log_group_retention_days: Optional[int] = None,
         create_log_stream: bool = True,
@@ -300,7 +300,7 @@ class CloudWatchLogHandler(logging.Handler):
             pass
         self._idempotent_call("create_log_group", logGroupName=self.log_group_name)
 
-    @functools.cache
+    @functools.lru_cache
     def _get_log_group_arn(self):
         # get the account number
         sts_client = boto3.client("sts")
@@ -308,7 +308,7 @@ class CloudWatchLogHandler(logging.Handler):
         region = self.cwl_client.meta.region_name
         return f"arn:aws:logs:{region}:{accountno}:log-group:{self.log_group_name}"
 
-    def _tag_log_group(self, log_group_tags: dict[str, str]):
+    def _tag_log_group(self, log_group_tags: Dict[str, str]):
         try:
             self._idempotent_call("tag_resource", resourceArn=self._get_log_group_arn(), tags=log_group_tags)
         except (
