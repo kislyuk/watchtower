@@ -336,7 +336,7 @@ class CloudWatchLogHandler(logging.Handler):
     def _get_stream_name(self, message):
         return self.log_stream_name.format(
             machine_name=self._get_machine_name(),
-            program_name=sys.argv[0],
+            program_name=sys.argv[0].replace(":", ""),
             process_id=os.getpid(),
             thread_name=threading.current_thread().name,
             logger_name=message.name,
