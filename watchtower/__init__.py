@@ -149,8 +149,10 @@ class CloudWatchLogHandler(logging.Handler):
         Name of the CloudWatch log stream to write logs to. By default, a string containing the machine name, the
         program name, and the name of the logger that processed the message is used. Accepts the following format string
         parameters: {machine_name}, {program_name}, {logger_name}, {process_id}, {thread_name}, and {strftime:%m-%d-%y},
-        where any strftime string can be used to include the current UTC datetime in the stream name. The strftime
-        format string option can be used to sort logs into streams on an hourly, daily, or monthly basis.
+        where a strftime string can be used to include the current UTC datetime in the stream name. The strftime
+        format string option can be used to sort logs into streams on an hourly, daily, or monthly basis. Note
+        CloudWatch does not allow colons in the log stream name, so for the strftime placeholder to work, a format
+        string without colons must be specified.
     :param use_queues:
         If **True** (the default), logs will be queued on a per-stream basis and sent in batches. To manage the queues,
         a queue handler thread will be spawned. You can set this to False to make it easier to debug threading issues in
