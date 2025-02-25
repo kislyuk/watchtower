@@ -126,7 +126,7 @@ class CloudWatchLogFormatter(logging.Formatter):
 
     def format(self, message):
         if self.add_log_record_attrs:
-            msg = message.msg if isinstance(message.msg, Mapping) else {"msg": message.msg}
+            msg = message.msg if isinstance(message.msg, Mapping) else {"msg": message.getMessage()}
             for field in self.add_log_record_attrs:
                 if field != "msg":
                     msg[field] = getattr(message, field)  # type: ignore
