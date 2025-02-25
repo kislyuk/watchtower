@@ -1,3 +1,12 @@
+Changes for v3.4.0 (2025-02-25)
+===============================
+
+- Format message placeholders when using add_log_record_attrs (#184)
+
+- Remove “:” in program_name of stream name (#207)
+
+- Add note about strftime format string being required
+
 Changes for v3.3.1 (2024-08-20)
 ===============================
 
