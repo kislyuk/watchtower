@@ -13,7 +13,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 pygments_style = "sphinx"
 autodoc_typehints = "description"
 intersphinx_mapping = {
-    "https://docs.python.org/3": None,
+    "python": ("https://docs.python.org/3", None),
 }
 templates_path = [""]
 
