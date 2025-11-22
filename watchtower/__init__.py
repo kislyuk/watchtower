@@ -445,24 +445,24 @@ class CloudWatchLogHandler(logging.Handler):
                 cwl_message = self._truncate(cwl_message, max_message_body_size)
 
             if self.use_queues:
-                if stream_name not in self.queues:
-                    self.queues[stream_name] = queue.Queue()
-                    thread = threading.Thread(
-                        target=self._dequeue_batch,
-                        args=(
-                            self.queues[stream_name],
-                            stream_name,
-                            self.send_interval,
-                            self.max_batch_size,
-                            self.max_batch_count,
-                        ),
-                    )
-                    self.threads.append(thread)
-                    thread.daemon = True
-                    thread.start()
                 if self.shutting_down:
                     warnings.warn("Received message after logging system shutdown", WatchtowerWarning)
                 else:
+                    if stream_name not in self.queues:
+                        self.queues[stream_name] = queue.Queue()
+                        thread = threading.Thread(
+                            target=self._dequeue_batch,
+                            args=(
+                                self.queues[stream_name],
+                                stream_name,
+                                self.send_interval,
+                                self.max_batch_size,
+                                self.max_batch_count,
+                            ),
+                        )
+                        self.threads.append(thread)
+                        thread.daemon = True
+                        thread.start()
                     self.queues[stream_name].put(cwl_message)
             else:
                 self._submit_batch([cwl_message], stream_name)
