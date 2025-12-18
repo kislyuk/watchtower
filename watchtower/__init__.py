@@ -1,6 +1,7 @@
 import functools
 import json
 import logging
+import copy
 import os
 import platform
 import queue
@@ -125,6 +126,7 @@ class CloudWatchLogFormatter(logging.Formatter):
             self.add_log_record_attrs = add_log_record_attrs
 
     def format(self, message):
+        message = copy.deepcopy(message)
         if self.add_log_record_attrs:
             msg = message.msg if isinstance(message.msg, Mapping) else {"msg": message.getMessage()}
             for field in self.add_log_record_attrs:
